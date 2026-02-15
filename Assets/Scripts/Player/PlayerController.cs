@@ -1,29 +1,33 @@
 using Mirror;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(PlayerInput))]
 public class PlayerController : NetworkBehaviour
 {
-    [SerializeField] private float moveSpeed = 5.0f;
+    [SerializeField] private float rotationSpeed = 10f;
 
-    private Rigidbody rb;
+    private NavMeshAgent agent;
     private PlayerInput playerInput;
-    private Vector2 moveInput;
+    private Camera mainCamera;
 
     private void Awake()
     {
-        rb = GetComponent<Rigidbody>();
+        agent = GetComponent<NavMeshAgent>();
         playerInput = GetComponent<PlayerInput>();
+        agent.enabled = false;
         playerInput.enabled = false;
     }
 
     public override void OnStartAuthority()
     {
         base.OnStartAuthority();
+        agent.enabled = true;
         playerInput.enabled = true;
         transform.rotation = Quaternion.identity;
+        mainCamera = Camera.main;
 
         var cam = FindFirstObjectByType<QuarterViewCamera>();
         if (cam != null)
@@ -33,19 +37,34 @@ public class PlayerController : NetworkBehaviour
     public override void OnStopAuthority()
     {
         base.OnStopAuthority();
+        agent.enabled = false;
         playerInput.enabled = false;
     }
 
-    void FixedUpdate()
+    void Update()
     {
         if (!isOwned) return;
-
-        Vector3 move = new Vector3(moveInput.x, 0f, moveInput.y).normalized * moveSpeed;
-        rb.velocity = new Vector3(move.x, rb.velocity.y, move.z);
+        FaceTarget();
     }
 
     public void OnMove(InputValue value)
     {
-        moveInput = value.Get<Vector2>();
+        if (!isOwned || mainCamera == null) return;
+
+        Vector2 mousePos = Mouse.current.position.ReadValue();
+        Ray ray = mainCamera.ScreenPointToRay(mousePos);
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f))
+        {
+            agent.SetDestination(hit.point);
+        }
+    }
+
+    private void FaceTarget()
+    {
+        if (agent.velocity.sqrMagnitude > 0.1f)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(agent.velocity.normalized);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+        }
     }
 }
