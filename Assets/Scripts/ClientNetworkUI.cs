@@ -10,16 +10,18 @@ public class ClientNetworkUI : MonoBehaviour
     [Header("연결 UI")]
     [SerializeField] private GameObject connectPanel;
     [SerializeField] private Button btnConnect;
-    
+
     [Header("연결 후 UI")]
     [SerializeField] private GameObject statusPanel;
     [SerializeField] private TMP_Text textStatus;
     [SerializeField] private Button btnDisconnect;
-    
+
+    private bool isConnecting;
+
     void Start()
     {
         NetworkManager.singleton.networkAddress = "localhost";
-        
+
         btnConnect.onClick.AddListener(OnClickConnect);
         btnDisconnect.onClick.AddListener(OnClickDisConnect);
 
@@ -27,6 +29,8 @@ public class ClientNetworkUI : MonoBehaviour
 
     private void OnClickConnect()
     {
+        Debug.Log("Start Client");
+        isConnecting = true;
         NetworkManager.singleton.StartClient();
         ShowStatusPanel();
         textStatus.text = "연결 중...";
@@ -34,6 +38,7 @@ public class ClientNetworkUI : MonoBehaviour
 
     private void OnClickDisConnect()
     {
+        isConnecting = false;
         NetworkManager.singleton.StopClient();
         ShowConnectPanel();
     }
@@ -43,7 +48,7 @@ public class ClientNetworkUI : MonoBehaviour
         connectPanel.SetActive(true);
         statusPanel.SetActive(false);
     }
-    
+
     private void ShowStatusPanel()
     {
         connectPanel.SetActive(false);
@@ -56,8 +61,13 @@ public class ClientNetworkUI : MonoBehaviour
             return;
 
         if (NetworkClient.isConnected)
-            textStatus.text = $"{NetworkClient.connection.connectionId} 연결됨";
-        else if (!NetworkClient.isConnected && !NetworkServer.active)
+        {
+            isConnecting = false;
+            textStatus.text = $"연결됨 (ID: {NetworkClient.connection.connectionId})";
+        }
+        else if (!isConnecting)
+        {
             ShowConnectPanel();
+        }
     }
 }

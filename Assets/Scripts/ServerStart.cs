@@ -13,7 +13,11 @@ public class ServerStart : MonoBehaviour
         if (uiCanvas != null)
             uiCanvas.SetActive(false);
 
-        Debug.Log("Server 시작");
+        // 모든 ParticleSystem 비활성화
+        foreach (var ps in FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None))
+            ps.gameObject.SetActive(false);
+
+        Debug.Log("Server Start");
         NetworkManager.singleton.StartServer();
 #endif
     }
