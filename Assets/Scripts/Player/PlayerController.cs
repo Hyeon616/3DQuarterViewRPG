@@ -17,16 +17,25 @@ public class PlayerController : NetworkBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         playerInput = GetComponent<PlayerInput>();
-        agent.enabled = false;
         playerInput.enabled = false;
+    }
+
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        agent.enabled = true;
+    }
+
+    public override void OnStopServer()
+    {
+        base.OnStopServer();
+        agent.enabled = false;
     }
 
     public override void OnStartAuthority()
     {
         base.OnStartAuthority();
-        agent.enabled = true;
         playerInput.enabled = true;
-        transform.rotation = Quaternion.identity;
         mainCamera = Camera.main;
 
         var cam = FindFirstObjectByType<QuarterViewCamera>();
@@ -37,14 +46,7 @@ public class PlayerController : NetworkBehaviour
     public override void OnStopAuthority()
     {
         base.OnStopAuthority();
-        agent.enabled = false;
         playerInput.enabled = false;
-    }
-
-    void Update()
-    {
-        if (!isOwned) return;
-        FaceTarget();
     }
 
     public void OnMove(InputValue value)
@@ -55,10 +57,23 @@ public class PlayerController : NetworkBehaviour
         Ray ray = mainCamera.ScreenPointToRay(mousePos);
         if (Physics.Raycast(ray, out RaycastHit hit, 100f))
         {
-            agent.SetDestination(hit.point);
+            CmdMove(hit.point);
         }
     }
 
+    [Command]
+    private void CmdMove(Vector3 destination)
+    {
+        agent.SetDestination(destination);
+    }
+
+    void Update()
+    {
+        if (!isServer) return;
+        FaceTarget();
+    }
+
+    [Server]
     private void FaceTarget()
     {
         if (agent.velocity.sqrMagnitude > 0.1f)
