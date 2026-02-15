@@ -1,25 +1,52 @@
 using UnityEngine;
+using Cinemachine;
 
 public class QuarterViewCamera : MonoBehaviour
 {
-    [Header("카메라 설정")]
-    [SerializeField] private Vector3 offset = new Vector3(0f, 10f, -10f);
-    [SerializeField] private Vector3 rotation = new Vector3(45f, 0f, 0f);
-    [SerializeField] private float smoothSpeed = 5f;
+    [Header("Camera View")]
+    [SerializeField] private float height = 4.5f;
+    [SerializeField] private float distance = 3f;
+    [SerializeField] private float angle = 55f;
+    [SerializeField] private float damping = 0f;
 
-    private Transform target;
+    private CinemachineVirtualCamera vcam;
+    private CinemachineTransposer transposer;
+    private bool hasTarget;
 
-    public void SetTarget(Transform newTarget)
+    void Awake()
     {
-        target = newTarget;
+        vcam = GetComponent<CinemachineVirtualCamera>();
     }
 
-    void LateUpdate()
+    void Update()
     {
-        if (target == null) return;
+        if (!hasTarget || transposer == null) return;
 
-        Vector3 desiredPosition = target.position + offset;
-        transform.position = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed * Time.deltaTime);
-        transform.eulerAngles = rotation;
+        transposer.m_FollowOffset = new Vector3(0f, height, -distance);
+        transposer.m_XDamping = damping;
+        transposer.m_YDamping = damping;
+        transposer.m_ZDamping = damping;
+        transform.eulerAngles = new Vector3(angle, 0f, 0f);
+    }
+
+    public void SetTarget(Transform target)
+    {
+        if (vcam == null) return;
+
+        // Transposer 설정
+        transposer = vcam.GetCinemachineComponent<CinemachineTransposer>();
+        if (transposer == null)
+        {
+            vcam.AddCinemachineComponent<CinemachineTransposer>();
+            transposer = vcam.GetCinemachineComponent<CinemachineTransposer>();
+        }
+        transposer.m_BindingMode = CinemachineTransposer.BindingMode.WorldSpace;
+
+        var composer = vcam.GetCinemachineComponent<CinemachineComposer>();
+        if (composer != null)
+            Destroy(composer);
+
+        vcam.Follow = target;
+        hasTarget = true;
     }
 }

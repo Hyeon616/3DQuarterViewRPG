@@ -25,7 +25,7 @@ public class PlayerController : NetworkBehaviour
         playerInput.enabled = true;
         transform.rotation = Quaternion.identity;
 
-        var cam = Camera.main?.GetComponent<QuarterViewCamera>();
+        var cam = FindFirstObjectByType<QuarterViewCamera>();
         if (cam != null)
             cam.SetTarget(transform);
     }
