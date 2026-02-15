@@ -1,20 +1,55 @@
-using System.Collections;
-using System.Collections.Generic;
+
+using Mirror;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : NetworkBehaviour
 {
     [SerializeField] private float moveSpeed = 5.0f;
-    private Vector2 inputVec;
+    
+    private Rigidbody rb;
+    private PlayerInput playerInput;
+    private Vector2 moveInput;
+    
 
-    void Update()
+    private void Awake()
     {
-        transform.position += new Vector3(inputVec.x, 0, inputVec.y) * moveSpeed * Time.deltaTime;
+        rb = GetComponent<Rigidbody>();
+        playerInput = GetComponent<PlayerInput>();
+
+        playerInput.enabled = false;
+    }
+
+    public override void OnStartLocalPlayer()
+    {
+        playerInput.enabled = true;
+        AttachCamera();
+    }
+    
+    void FixedUpdate()
+    {
+        if(!isLocalPlayer)
+            return;
+
+        Vector3 move = new Vector3(moveInput.x, 0f, moveInput.y);
+        move = move.normalized * moveSpeed;
+
+        rb.velocity = new Vector3(move.x, rb.velocity.y, move.z);
     }
 
     public void OnMove(InputValue value)
     {
-        inputVec = value.Get<Vector2>();
+        moveInput = value.Get<Vector2>();
+    }
+    
+    void AttachCamera()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) 
+            return;
+
+        cam.transform.SetParent(transform);
+        cam.transform.localPosition    = new Vector3(0, 6, -9);
+        cam.transform.localEulerAngles = new Vector3(25, 0, 0);
     }
 }
