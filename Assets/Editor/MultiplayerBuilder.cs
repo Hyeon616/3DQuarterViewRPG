@@ -45,23 +45,19 @@ public static class MultiplayerBuilder
 
     private static void SwitchToServerPlatform()
     {
-       
         if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.StandaloneWindows64)
         {
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64);
         }
-       
         EditorUserBuildSettings.standaloneBuildSubtarget = StandaloneBuildSubtarget.Server;
     }
 
     private static void SwitchToClientPlatform()
     {
-        
         if (EditorUserBuildSettings.activeBuildTarget != ClientBuildTarget)
         {
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, ClientBuildTarget);
         }
-        
         EditorUserBuildSettings.standaloneBuildSubtarget = StandaloneBuildSubtarget.Player;
     }
 
@@ -70,7 +66,6 @@ public static class MultiplayerBuilder
     /// </summary>
     private static ShaderVariantCollection[] ApplyEmptyShaderVariants()
     {
-        
         var graphicsSettings = GraphicsSettings.GetGraphicsSettings();
         var serializedObject = new SerializedObject(graphicsSettings);
         var originalShaders = serializedObject.FindProperty("m_PreloadedShaders");
@@ -86,9 +81,7 @@ public static class MultiplayerBuilder
         var emptyCollection = AssetDatabase.LoadAssetAtPath<ShaderVariantCollection>(EmptyShaderVariantPath);
         if (emptyCollection == null)
         {
-            // Settings 폴더 생성
-            var settingsDir = Path.GetDirectoryName(EmptyShaderVariantPath);
-            if (!AssetDatabase.IsValidFolder(settingsDir))
+            if (!AssetDatabase.IsValidFolder("Assets/Settings"))
             {
                 AssetDatabase.CreateFolder("Assets", "Settings");
             }
@@ -118,10 +111,13 @@ public static class MultiplayerBuilder
         var shadersProp = serializedObject.FindProperty("m_PreloadedShaders");
 
         shadersProp.ClearArray();
-        shadersProp.arraySize = backupList.Length;
-        for (int i = 0; i < backupList.Length; i++)
+        if (backupList.Length > 0)
         {
-            shadersProp.GetArrayElementAtIndex(i).objectReferenceValue = backupList[i];
+            shadersProp.arraySize = backupList.Length;
+            for (int i = 0; i < backupList.Length; i++)
+            {
+                shadersProp.GetArrayElementAtIndex(i).objectReferenceValue = backupList[i];
+            }
         }
         serializedObject.ApplyModifiedPropertiesWithoutUndo();
     }
@@ -145,7 +141,6 @@ public static class MultiplayerBuilder
 
         SwitchToClientPlatform();
 
-        // 플랫폼 변경 완료 후 서버 실행
         if (File.Exists(ServerExe))
             Process.Start(ServerExe);
     }
@@ -154,14 +149,9 @@ public static class MultiplayerBuilder
     public static void BuildServerScriptsOnly()
     {
         SwitchToServerPlatform();
-
-        // 스크립트만 빌드
         Build(ServerExe, BuildOptions.Development | BuildOptions.CompressWithLz4 | BuildOptions.BuildScriptsOnly);
-
-        // 빌드 후 먼저 platform 변경
         SwitchToClientPlatform();
 
-        // 서버 실행
         if (File.Exists(ServerExe))
             Process.Start(ServerExe);
     }

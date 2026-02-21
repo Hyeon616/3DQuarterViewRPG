@@ -11,6 +11,13 @@ public class PerformanceUI : MonoBehaviour
     [SerializeField] private TMP_Text _drawCallsText;
     [SerializeField] private TMP_Text _gcAllocText;
 
+    private void Awake()
+    {
+#if UNITY_SERVER
+        gameObject.SetActive(false);
+#endif
+    }
+    
     private void Start()
     {
         if (_performanceView == null)

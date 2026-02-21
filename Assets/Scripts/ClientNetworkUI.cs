@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Mirror;
@@ -17,6 +18,13 @@ public class ClientNetworkUI : MonoBehaviour
     [SerializeField] private Button btnDisconnect;
 
     private bool isConnecting;
+
+    private void Awake()
+    {
+#if UNITY_SERVER
+        gameObject.SetActive(false);
+#endif
+    }
 
     void Start()
     {

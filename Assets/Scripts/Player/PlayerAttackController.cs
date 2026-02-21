@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 public class PlayerAttackController : NetworkBehaviour
 {
     [Header("Hold Attack")]
-    [SerializeField] private float holdAttackInterval = 0.15f; // 홀드 시 공격 요청 간격
+    [SerializeField] private float holdAttackInterval = 0.15f; 
 
     private PlayerAnimationController animController;
     private float lastAttackRequestTime;
@@ -21,10 +21,9 @@ public class PlayerAttackController : NetworkBehaviour
     {
         if (!isOwned) return;
 
-        bool isHeld = Mouse.current != null && Mouse.current.leftButton.isPressed;
+        bool isHold = Mouse.current != null && Mouse.current.leftButton.isPressed;
 
-        // 홀드 중일 때 일정 간격으로 공격 요청
-        if (isHeld && attackStarted)
+        if (isHold && attackStarted)
         {
             if (Time.time - lastAttackRequestTime >= holdAttackInterval)
             {
@@ -33,19 +32,17 @@ public class PlayerAttackController : NetworkBehaviour
             }
         }
 
-        // 버튼을 떼면 attackStarted 리셋
-        if (!isHeld)
+        if (!isHold)
         {
             attackStarted = false;
         }
     }
 
-    // PlayerInput에서 Attack 액션 호출 (좌클릭)
+    
     public void OnAttack(InputValue value)
     {
         if (!isOwned) return;
 
-        // 버튼을 누르는 순간 즉시 공격
         if (value.isPressed)
         {
             attackStarted = true;
