@@ -40,19 +40,36 @@ public static class MultiplayerBuilder
         }
     }
 
-    [MenuItem("Build/Server")]
-    public static void BuildServer()
+    private static void SwitchToServerPlatform()
     {
         EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64);
         EditorUserBuildSettings.standaloneBuildSubtarget = StandaloneBuildSubtarget.Server;
+    }
+
+    private static void SwitchToClientPlatform()
+    {
+        EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, ClientBuildTarget);
+        EditorUserBuildSettings.standaloneBuildSubtarget = StandaloneBuildSubtarget.Player;
+    }
+
+    [MenuItem("Build/Server")]
+    public static void BuildServer()
+    {
+        SwitchToServerPlatform();
         Build(ServerExe);
+
+        // 서버 실행
+        if (File.Exists(ServerExe))
+            Process.Start(ServerExe);
+
+        // 빌드 후 build platform 변경
+        SwitchToClientPlatform();
     }
 
     [MenuItem("Build/Client")]
     public static void BuildClient()
     {
-        EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, ClientBuildTarget);
-        EditorUserBuildSettings.standaloneBuildSubtarget = StandaloneBuildSubtarget.Player;
+        SwitchToClientPlatform();
         Build(ClientExe);
     }
 
@@ -67,12 +84,16 @@ public static class MultiplayerBuilder
 
     private static void Run(int count)
     {
-        EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, ClientBuildTarget);
-        EditorUserBuildSettings.standaloneBuildSubtarget = StandaloneBuildSubtarget.Player;
+        SwitchToClientPlatform();
 
-        if (File.Exists(ServerExe)) Process.Start(ServerExe);
+        if (File.Exists(ServerExe))
+            Process.Start(ServerExe);
+
         for (int i = 0; i < count; i++)
-            if (File.Exists(ClientExe)) Process.Start(ClientExe);
+        {
+            if (File.Exists(ClientExe))
+                Process.Start(ClientExe);
+        }
     }
 
     private static void Build(string exePath)

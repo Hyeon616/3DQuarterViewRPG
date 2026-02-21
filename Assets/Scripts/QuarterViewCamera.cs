@@ -11,11 +11,13 @@ public class QuarterViewCamera : MonoBehaviour
 
     private CinemachineVirtualCamera vcam;
     private CinemachineTransposer transposer;
+    private CameraOcclusionController occlusionController;
     private bool hasTarget;
 
     void Awake()
     {
         vcam = GetComponent<CinemachineVirtualCamera>();
+        occlusionController = GetComponent<CameraOcclusionController>();
     }
 
     void Update()
@@ -48,5 +50,10 @@ public class QuarterViewCamera : MonoBehaviour
 
         vcam.Follow = target;
         hasTarget = true;
+
+        if (occlusionController != null)
+        {
+            occlusionController.SetTarget(target);
+        }
     }
 }
