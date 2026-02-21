@@ -8,22 +8,23 @@ public class PlayableAnimator : MonoBehaviour, IAnimatable
 {
     [SerializeField] private CharacterAnimationData animationData;
     [SerializeField] private Animator animator;
-    
+
     private PlayableGraph playableGraph;
     private AnimationMixerPlayable mixerPlayable;
-    
+
     private Dictionary<string, AnimationClipPlayable> clipPlayables = new();
     private Dictionary<string, int> clipIndices = new();
 
     private string currentAnimation;
     private string targetAnimation;
-    
+
     private float transitionDuration;
     private float transitionTime;
-    
+
     private bool isTransitioning;
 
     public string CurrentAnimation => currentAnimation;
+    public int AttackCount => animationData != null ? animationData.AttackCount : 0;
 
     private void Awake()
     {
@@ -71,13 +72,13 @@ public class PlayableAnimator : MonoBehaviour, IAnimatable
             currentAnimation = BaseAnimationData.Idle;
             mixerPlayable.SetInputWeight(clipIndices[BaseAnimationData.Idle],1f);
         }
-        
+
         playableGraph.Play();
     }
 
     private void Update()
     {
-        if (!isTransitioning) 
+        if (!isTransitioning)
             return;
 
         transitionTime += Time.deltaTime;
@@ -100,7 +101,7 @@ public class PlayableAnimator : MonoBehaviour, IAnimatable
         int currentIndex = clipIndices[currentAnimation];
         int targetIndex = clipIndices[targetAnimation];
 
-       
+
         for (int i = 0; i < mixerPlayable.GetInputCount(); i++)
         {
             mixerPlayable.SetInputWeight(i, 0f);
@@ -148,6 +149,12 @@ public class PlayableAnimator : MonoBehaviour, IAnimatable
         {
             mixerPlayable.SetSpeed(speed);
         }
+    }
+
+    public float GetAnimationDuration(string animationName)
+    {
+        var anim = animationData.GetAnimation(animationName);
+        return anim?.Clip != null ? anim.Clip.length : 0f;
     }
 
     private void OnDestroy()

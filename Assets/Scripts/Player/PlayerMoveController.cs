@@ -13,6 +13,7 @@ public class PlayerMoveController : NetworkBehaviour
     private NavMeshAgent agent;
     private PlayerInput playerInput;
     private Camera mainCamera;
+    private PlayerAnimationController animController;
 
     public NavMeshAgent Agent => agent;
 
@@ -20,8 +21,8 @@ public class PlayerMoveController : NetworkBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         playerInput = GetComponent<PlayerInput>();
+        animController = GetComponent<PlayerAnimationController>();
         playerInput.enabled = false;
-
     }
 
     public override void OnStartServer()
@@ -58,6 +59,9 @@ public class PlayerMoveController : NetworkBehaviour
     {
         if (!isOwned || mainCamera == null) return;
 
+        // 공격 중에는 이동 불가
+        if (animController != null && animController.IsAttacking) return;
+
         Vector2 mousePos = Mouse.current.position.ReadValue();
         Ray ray = mainCamera.ScreenPointToRay(mousePos);
 
@@ -83,6 +87,17 @@ public class PlayerMoveController : NetworkBehaviour
     void Update()
     {
         if (!isServer) return;
+
+        // 공격 중이면 이동 멈춤
+        if (animController != null && animController.IsAttacking)
+        {
+            if (agent.hasPath)
+            {
+                agent.ResetPath();
+            }
+            return;
+        }
+
         FaceTarget();
     }
 

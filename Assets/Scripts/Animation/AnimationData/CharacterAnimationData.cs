@@ -13,6 +13,8 @@ public class CharacterAnimationData : ScriptableObject
     [Header("스킬 애니메이션")]
     [SerializeField] private List<SkillAnimationData> skills;
 
+    public int AttackCount => baseAnimations != null ? baseAnimations.AttackCount : 0;
+
     public IEnumerable<CharacterAnimation> GetAllAnimations()
     {
         var result = new List<CharacterAnimation>();

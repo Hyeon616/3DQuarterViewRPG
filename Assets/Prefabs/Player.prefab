@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3223244677488558243}
   - component: {fileID: 6160001141994791422}
   - component: {fileID: 3203187112201756061}
+  - component: {fileID: 1056760674263384253}
   - component: {fileID: 4545580631330673457}
   - component: {fileID: 2347200381047020699}
   - component: {fileID: 1450383811817453290}
@@ -151,6 +152,24 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   moveThreshold: 0.1
+--- !u!114 &1056760674263384253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6318259307538443086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6fdf1f7122e24c24aa7e7b47ae6ee96e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  comboResetTime: 1
+  attackCooldown: 0.3
+  animationData: {fileID: 0}
 --- !u!114 &4545580631330673457
 MonoBehaviour:
   m_ObjectHideFlags: 0
