@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7715ed20eee26244a3984b9210bd522, type: 3}
+  m_Name: Fighter_BaseAnimationData
+  m_EditorClassIdentifier: 
+  idle: {fileID: 1827226128182048838, guid: 03cc4a48fcc3135499377ccb8d93b1f4, type: 3}
+  walk: {fileID: 1827226128182048838, guid: 5643d63ea38e0e743ad8a0b8ea3bc47c, type: 3}
+  run: {fileID: 1827226128182048838, guid: 5643d63ea38e0e743ad8a0b8ea3bc47c, type: 3}
+  attack: {fileID: 1827226128182048838, guid: 0a7e5f0b74cfc1f4eb4023dd4ab120bb, type: 3}
+  hit: {fileID: 7400000, guid: 8398a2528f4208e4f99f8b26309b0bf6, type: 3}
+  die: {fileID: 7400000, guid: 2dadb33153dbe2c44836108716f23b78, type: 3}
