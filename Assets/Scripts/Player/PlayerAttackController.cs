@@ -38,7 +38,6 @@ public class PlayerAttackController : NetworkBehaviour
         }
     }
 
-    
     public void OnAttack(InputValue value)
     {
         if (!isOwned) return;

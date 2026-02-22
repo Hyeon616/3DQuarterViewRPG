@@ -25,6 +25,7 @@ public class PlayableAnimator : MonoBehaviour, IAnimatable
 
     public string CurrentAnimation => currentAnimation;
     public int AttackCount => animationData != null ? animationData.AttackCount : 0;
+    public float RunThreshold => animationData != null ? animationData.RunThreshold : 0.3f;
 
     private void Awake()
     {
@@ -33,8 +34,14 @@ public class PlayableAnimator : MonoBehaviour, IAnimatable
 
     private void InitializePlayableGraph()
     {
-        if(animator == null)
+        if (animator == null)
             animator = GetComponentInChildren<Animator>();
+
+        if (animator == null || animationData == null)
+        {
+            Debug.LogWarning($"[PlayableAnimator] Missing components on {gameObject.name}");
+            return;
+        }
 
         animator.applyRootMotion = false;
 

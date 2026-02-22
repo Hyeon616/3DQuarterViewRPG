@@ -1,15 +1,11 @@
-using System.Collections;
-using System.Collections.Generic;
 using Mirror;
 using UnityEngine;
 
 public class ServerStart : MonoBehaviour
 {
-    
-    void Start()
+    private void Start()
     {
 #if UNITY_SERVER
-        // 모든 ParticleSystem 비활성화
         foreach (var ps in FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None))
             ps.gameObject.SetActive(false);
 
@@ -17,8 +13,4 @@ public class ServerStart : MonoBehaviour
         NetworkManager.singleton.StartServer();
 #endif
     }
-
-    
-    
-    
 }

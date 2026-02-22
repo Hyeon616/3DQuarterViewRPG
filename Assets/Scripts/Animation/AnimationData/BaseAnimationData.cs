@@ -15,6 +15,9 @@ public class BaseAnimationData : ScriptableObject
     [SerializeField] private AnimationClip idle;
     [SerializeField] private AnimationClip walk;
     [SerializeField] private AnimationClip run;
+    [SerializeField] private float runThreshold = 0.3f;
+
+    public float RunThreshold => runThreshold;
 
     [Header("전투")]
     [SerializeField] private AttackAnimationData[] attacks;

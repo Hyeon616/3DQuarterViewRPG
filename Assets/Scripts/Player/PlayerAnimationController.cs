@@ -4,7 +4,21 @@ using UnityEngine;
 [RequireComponent(typeof(PlayerMoveController))]
 public class PlayerAnimationController : NetworkBehaviour
 {
-    [SerializeField] private float moveThreshold = 0.3f;
+    private struct AttackMoveState
+    {
+        public Vector3 Direction;
+        public float Progress;
+        public float Speed;
+        public float Duration;
+
+        public void Reset(Vector3 direction, float distance, float duration)
+        {
+            Direction = direction;
+            Progress = 0f;
+            Duration = duration;
+            Speed = duration > 0f ? distance / duration : 0f;
+        }
+    }
 
     [SyncVar(hook = nameof(OnAnimationChanged))]
     private string currentAnimation = BaseAnimationData.Idle;
@@ -19,11 +33,7 @@ public class PlayerAnimationController : NetworkBehaviour
     private float currentAttackDuration;
     private bool nextAttackQueued;
 
-    // 공격 이동
-    private Vector3 attackMoveDirection;
-    private float attackMoveProgress;
-    private float attackMoveSpeed;
-    private float currentAttackMoveDuration;
+    private AttackMoveState attackMove;
 
     private int MaxComboCount => animatable?.AttackCount ?? 0;
     public bool IsAttacking => isAttacking;
@@ -38,28 +48,28 @@ public class PlayerAnimationController : NetworkBehaviour
     {
         if (!isServer) return;
         UpdateAttackMovement();
-        UpdateAttackState();
-        UpdateAnimationState();
+        ProcessAttack();
+        UpdateLocomotionAnimation();
     }
 
     [Server]
     private void UpdateAttackMovement()
     {
-        if (!isAttacking || attackMoveProgress >= 1f || currentAttackMoveDuration <= 0f) return;
+        if (!isAttacking || attackMove.Progress >= 1f || attackMove.Duration <= 0f) return;
 
-        float moveDelta = attackMoveSpeed * Time.deltaTime;
-        attackMoveProgress += Time.deltaTime / currentAttackMoveDuration;
-        attackMoveProgress = Mathf.Clamp01(attackMoveProgress);
+        float moveDelta = attackMove.Speed * Time.deltaTime;
+        attackMove.Progress += Time.deltaTime / attackMove.Duration;
+        attackMove.Progress = Mathf.Clamp01(attackMove.Progress);
 
         var agent = moveController.Agent;
         if (agent != null && agent.enabled)
         {
-            agent.Move(attackMoveDirection * moveDelta);
+            agent.Move(attackMove.Direction * moveDelta);
         }
     }
 
     [Server]
-    private void UpdateAttackState()
+    private void ProcessAttack()
     {
         if (!isAttacking) return;
 
@@ -80,11 +90,11 @@ public class PlayerAnimationController : NetworkBehaviour
     }
 
     [Server]
-    private void UpdateAnimationState()
+    private void UpdateLocomotionAnimation()
     {
         if (isAttacking) return;
 
-        string targetAnim = DetermineAnimation();
+        string targetAnim = GetLocomotionAnimation();
 
         if (currentAnimation != targetAnim)
         {
@@ -93,10 +103,12 @@ public class PlayerAnimationController : NetworkBehaviour
     }
 
     [Server]
-    private string DetermineAnimation()
+    private string GetLocomotionAnimation()
     {
+        float threshold = animatable?.RunThreshold ?? 0.3f;
+
         if (moveController.Agent != null &&
-            moveController.Agent.velocity.sqrMagnitude > moveThreshold * moveThreshold)
+            moveController.Agent.velocity.sqrMagnitude > threshold * threshold)
         {
             return BaseAnimationData.Run;
         }
@@ -134,12 +146,8 @@ public class PlayerAnimationController : NetworkBehaviour
         attackStartTime = Time.time;
         currentAttackDuration = animatable?.GetAnimationDuration(attackAnim) ?? 1f;
 
-        // 공격 이동 데이터 가져오기
         var moveData = animatable?.GetAttackMoveData(attackAnim) ?? (0f, 0f);
-        attackMoveDirection = transform.forward;
-        attackMoveProgress = 0f;
-        currentAttackMoveDuration = moveData.duration;
-        attackMoveSpeed = moveData.duration > 0f ? moveData.distance / moveData.duration : 0f;
+        attackMove.Reset(transform.forward, moveData.distance, moveData.duration);
 
         currentComboIndex = (currentComboIndex + 1) % MaxComboCount;
     }
