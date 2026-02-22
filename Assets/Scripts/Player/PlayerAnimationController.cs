@@ -34,6 +34,7 @@ public class PlayerAnimationController : NetworkBehaviour
     private bool nextAttackQueued;
 
     private AttackMoveState attackMove;
+    private Vector3 queuedAttackDirection;
 
     private int MaxComboCount => animatable?.AttackCount ?? 0;
     public bool IsAttacking => isAttacking;
@@ -80,7 +81,7 @@ public class PlayerAnimationController : NetworkBehaviour
             if (nextAttackQueued)
             {
                 nextAttackQueued = false;
-                ExecuteNextAttack();
+                ExecuteNextAttack(queuedAttackDirection);
             }
             else
             {
@@ -122,23 +123,30 @@ public class PlayerAnimationController : NetworkBehaviour
     }
 
     [Command]
-    public void CmdAttack()
+    public void CmdAttack(Vector3 direction)
     {
         if (MaxComboCount == 0) return;
 
         if (isAttacking)
         {
             nextAttackQueued = true;
+            queuedAttackDirection = direction;
             return;
         }
 
         currentComboIndex = 0;
-        ExecuteNextAttack();
+        ExecuteNextAttack(direction);
     }
 
     [Server]
-    private void ExecuteNextAttack()
+    private void ExecuteNextAttack(Vector3 direction)
     {
+        // 공격 방향으로 회전
+        if (direction.sqrMagnitude > 0.01f)
+        {
+            transform.rotation = Quaternion.LookRotation(direction);
+        }
+
         string attackAnim = BaseAnimationData.GetAttackName(currentComboIndex);
 
         currentAnimation = attackAnim;

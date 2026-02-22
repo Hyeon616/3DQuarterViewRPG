@@ -151,10 +151,6 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  moveThreshold: 0.1
-  defaultAttackDuration: 1
-  attackMoveDistance: 0.1
-  attackMoveDuration: 0.2
 --- !u!114 &1056760674263384253
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -171,6 +167,9 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   holdAttackInterval: 0.15
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!114 &4545580631330673457
 MonoBehaviour:
   m_ObjectHideFlags: 0
