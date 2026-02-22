@@ -20,7 +20,7 @@ public class QuarterViewCamera : MonoBehaviour
         occlusionController = GetComponent<CameraOcclusionController>();
     }
 
-    void Update()
+    private void LateUpdate()
     {
         if (!hasTarget || transposer == null) return;
 

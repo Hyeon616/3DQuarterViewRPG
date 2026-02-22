@@ -106,6 +106,14 @@ public class PlayerMoveController : NetworkBehaviour
         UpdateServer();
     }
 
+    private void FixedUpdate()
+    {
+        if (!isServer) return;
+        if (animController != null && animController.IsAttacking) return;
+
+        FaceMovementDirection();
+    }
+
     private void UpdateServer()
     {
         if (!isServer) return;
@@ -116,21 +124,18 @@ public class PlayerMoveController : NetworkBehaviour
             {
                 agent.ResetPath();
             }
-            return;
         }
-
-        FaceTarget();
     }
 
     [Server]
-    private void FaceTarget()
+    private void FaceMovementDirection()
     {
         Vector3 horizontalVelocity = new Vector3(agent.velocity.x, 0f, agent.velocity.z);
 
         if (horizontalVelocity.sqrMagnitude > 0.1f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(horizontalVelocity.normalized);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
         }
     }
 }

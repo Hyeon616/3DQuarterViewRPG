@@ -48,9 +48,14 @@ public class PlayerAnimationController : NetworkBehaviour
     private void Update()
     {
         if (!isServer) return;
-        UpdateAttackMovement();
         ProcessAttack();
         UpdateLocomotionAnimation();
+    }
+
+    private void FixedUpdate()
+    {
+        if (!isServer) return;
+        UpdateAttackMovement();
     }
 
     [Server]
@@ -58,8 +63,8 @@ public class PlayerAnimationController : NetworkBehaviour
     {
         if (!isAttacking || attackMove.Progress >= 1f || attackMove.Duration <= 0f) return;
 
-        float moveDelta = attackMove.Speed * Time.deltaTime;
-        attackMove.Progress += Time.deltaTime / attackMove.Duration;
+        float moveDelta = attackMove.Speed * Time.fixedDeltaTime;
+        attackMove.Progress += Time.fixedDeltaTime / attackMove.Duration;
         attackMove.Progress = Mathf.Clamp01(attackMove.Progress);
 
         var agent = moveController.Agent;
