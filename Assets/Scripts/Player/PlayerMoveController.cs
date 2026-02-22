@@ -58,9 +58,26 @@ public class PlayerMoveController : NetworkBehaviour
     public void OnMove(InputValue value)
     {
         if (!isOwned || mainCamera == null) return;
-
-        // 공격 중에는 이동 불가
         if (animController != null && animController.IsAttacking) return;
+
+        RequestMove();
+    }
+
+    private void UpdateClient()
+    {
+        if (!isOwned || mainCamera == null) return;
+        if (animController != null && animController.IsAttacking) return;
+
+        bool isHold = Mouse.current != null && Mouse.current.rightButton.isPressed;
+        if (isHold)
+        {
+            RequestMove();
+        }
+    }
+
+    private void RequestMove()
+    {
+        if (Mouse.current == null) return;
 
         Vector2 mousePos = Mouse.current.position.ReadValue();
         Ray ray = mainCamera.ScreenPointToRay(mousePos);
@@ -77,18 +94,22 @@ public class PlayerMoveController : NetworkBehaviour
         float distance = Vector3.Distance(transform.position, destination);
         if (distance < agent.stoppingDistance + 0.1f) return;
 
-        
         if (NavMesh.SamplePosition(destination, out NavMeshHit navHit, 1f, NavMesh.AllAreas))
         {
-            agent.SetDestination(navHit.position); 
+            agent.SetDestination(navHit.position);
         }
     }
 
-    void Update()
+    private void Update()
+    {
+        UpdateClient();
+        UpdateServer();
+    }
+
+    private void UpdateServer()
     {
         if (!isServer) return;
 
-        // 공격 중이면 이동 멈춤
         if (animController != null && animController.IsAttacking)
         {
             if (agent.hasPath)
