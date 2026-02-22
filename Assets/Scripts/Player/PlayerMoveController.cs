@@ -29,7 +29,7 @@ public class PlayerMoveController : NetworkBehaviour
     {
         base.OnStartServer();
         agent.enabled = true;
-        agent.updateRotation = false; // 회전은 직접 제어
+        agent.updateRotation = false;
     }
 
     public override void OnStopServer()

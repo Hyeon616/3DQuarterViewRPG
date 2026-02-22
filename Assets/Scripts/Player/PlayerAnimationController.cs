@@ -4,11 +4,7 @@ using UnityEngine;
 [RequireComponent(typeof(PlayerMoveController))]
 public class PlayerAnimationController : NetworkBehaviour
 {
-    [Header("Movement")]
     [SerializeField] private float moveThreshold = 0.3f;
-
-    [Header("Attack")]
-    [SerializeField] private float defaultAttackDuration = 1f;
 
     [SyncVar(hook = nameof(OnAnimationChanged))]
     private string currentAnimation = BaseAnimationData.Idle;
@@ -23,6 +19,12 @@ public class PlayerAnimationController : NetworkBehaviour
     private float currentAttackDuration;
     private bool nextAttackQueued;
 
+    // 공격 이동
+    private Vector3 attackMoveDirection;
+    private float attackMoveProgress;
+    private float attackMoveSpeed;
+    private float currentAttackMoveDuration;
+
     private int MaxComboCount => animatable?.AttackCount ?? 0;
     public bool IsAttacking => isAttacking;
 
@@ -35,8 +37,25 @@ public class PlayerAnimationController : NetworkBehaviour
     private void Update()
     {
         if (!isServer) return;
+        UpdateAttackMovement();
         UpdateAttackState();
         UpdateAnimationState();
+    }
+
+    [Server]
+    private void UpdateAttackMovement()
+    {
+        if (!isAttacking || attackMoveProgress >= 1f || currentAttackMoveDuration <= 0f) return;
+
+        float moveDelta = attackMoveSpeed * Time.deltaTime;
+        attackMoveProgress += Time.deltaTime / currentAttackMoveDuration;
+        attackMoveProgress = Mathf.Clamp01(attackMoveProgress);
+
+        var agent = moveController.Agent;
+        if (agent != null && agent.enabled)
+        {
+            agent.Move(attackMoveDirection * moveDelta);
+        }
     }
 
     [Server]
@@ -109,15 +128,18 @@ public class PlayerAnimationController : NetworkBehaviour
     private void ExecuteNextAttack()
     {
         string attackAnim = BaseAnimationData.GetAttackName(currentComboIndex);
-        float duration = animatable?.GetAnimationDuration(attackAnim) ?? 0f;
-
-        if (duration <= 0f)
-            duration = defaultAttackDuration;
 
         currentAnimation = attackAnim;
         isAttacking = true;
         attackStartTime = Time.time;
-        currentAttackDuration = duration;
+        currentAttackDuration = animatable?.GetAnimationDuration(attackAnim) ?? 1f;
+
+        // 공격 이동 데이터 가져오기
+        var moveData = animatable?.GetAttackMoveData(attackAnim) ?? (0f, 0f);
+        attackMoveDirection = transform.forward;
+        attackMoveProgress = 0f;
+        currentAttackMoveDuration = moveData.duration;
+        attackMoveSpeed = moveData.duration > 0f ? moveData.distance / moveData.duration : 0f;
 
         currentComboIndex = (currentComboIndex + 1) % MaxComboCount;
     }

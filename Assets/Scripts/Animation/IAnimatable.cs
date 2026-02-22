@@ -8,4 +8,5 @@ public interface IAnimatable
     string CurrentAnimation { get; }
     int AttackCount { get; }
     float GetAnimationDuration(string animationName);
+    (float distance, float duration) GetAttackMoveData(string animationName);
 }

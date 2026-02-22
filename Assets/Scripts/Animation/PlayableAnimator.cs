@@ -154,7 +154,15 @@ public class PlayableAnimator : MonoBehaviour, IAnimatable
     public float GetAnimationDuration(string animationName)
     {
         var anim = animationData.GetAnimation(animationName);
-        return anim?.Clip != null ? anim.Clip.length : 0f;
+        return anim?.Duration ?? 0f;
+    }
+
+    public (float distance, float duration) GetAttackMoveData(string animationName)
+    {
+        var anim = animationData.GetAnimation(animationName);
+        if (anim == null)
+            return (0f, 0f);
+        return (anim.MoveDistance, anim.MoveDuration);
     }
 
     private void OnDestroy()

@@ -7,7 +7,7 @@ public class BaseAnimationData : ScriptableObject
     public const string Idle = "Idle";
     public const string Walk = "Walk";
     public const string Run = "Run";
-    public const string Attack = "Attack"; // Attack1, Attack2, Attack3...
+    public const string Attack = "Attack";
     public const string Hit = "Hit";
     public const string Die = "Die";
 
@@ -17,13 +17,21 @@ public class BaseAnimationData : ScriptableObject
     [SerializeField] private AnimationClip run;
 
     [Header("전투")]
-    [SerializeField] private AnimationClip[] attacks;
+    [SerializeField] private AttackAnimationData[] attacks;
+    
     [SerializeField] private AnimationClip hit;
     [SerializeField] private AnimationClip die;
 
     public int AttackCount => attacks != null ? attacks.Length : 0;
 
     public static string GetAttackName(int index) => $"{Attack}{index + 1}";
+
+    public AttackAnimationData GetAttackData(int index)
+    {
+        if (attacks == null || index < 0 || index >= attacks.Length)
+            return null;
+        return attacks[index];
+    }
 
     public IEnumerable<CharacterAnimation> GetAnimations()
     {
@@ -41,9 +49,16 @@ public class BaseAnimationData : ScriptableObject
         {
             for (int i = 0; i < attacks.Length; i++)
             {
-                if (attacks[i] != null)
+                if (attacks[i]?.Clip != null)
                 {
-                    animations.Add(new CharacterAnimation(GetAttackName(i), attacks[i], true, 0.1f));
+                    animations.Add(new CharacterAnimation(
+                        GetAttackName(i),
+                        attacks[i].Clip,
+                        true,
+                        0.1f,
+                        attacks[i].MoveDistance,
+                        attacks[i].MoveDuration
+                    ));
                 }
             }
         }
