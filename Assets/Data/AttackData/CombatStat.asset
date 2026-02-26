@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66acc658108765f4e966a12e795a75ab, type: 3}
+  m_Name: CombatStat
+  m_EditorClassIdentifier: 
+  hpMultiplier: 1
+  attackMultiplier: 1
+  defenseMultiplier: 1
+  criticalChanceMultiplier: 1
+  criticalDamageMultiplier: 1
+  resources: []
+  identity:
+    identityName: 
+    maxValue: 0
+    chargeType: 0
+    chargePerSecond: 0

@@ -7,7 +7,7 @@ public class PlayerCombatController : NetworkBehaviour
     [SerializeField] private AttackType basicAttackType;
 
     [Header("Hit Detection")]
-    [SerializeField] private float hitRadius = 0.67f;
+    [SerializeField] private float hitRadius = 1.5f;
     [SerializeField] private LayerMask hitLayerMask;
 
     private CombatManager _combatManager;
@@ -48,7 +48,6 @@ public class PlayerCombatController : NetworkBehaviour
     [Server]
     private void HandleAttackStarted(int comboIndex)
     {
-        Debug.Log($"[Combat] Attack started - Combo: {comboIndex}, Type: {basicAttackType}");
         DetectHits();
     }
 
@@ -62,9 +61,18 @@ public class PlayerCombatController : NetworkBehaviour
             if (hit.gameObject == gameObject)
                 continue;
 
+            // 타겟의 HitZoneIndicator 범위 체크
+            var indicator = hit.GetComponentInChildren<HitZoneIndicator>();
+            if (indicator != null)
+            {
+                float distanceToTarget = Vector3.Distance(transform.position, hit.transform.position);
+                if (distanceToTarget > indicator.Radius)
+                    continue;
+            }
+
             HitDirection direction = _combatManager.GetHitDirection(transform.position, hit.transform);
             bool isBonusHit = _combatManager.CheckBonusHit(basicAttackType, gameObject, hit.transform);
-            HitBonus bonus = _combatManager.GetHitBonus(basicAttackType, gameObject, hit.transform);
+            HitBonusData bonus = _combatManager.GetHitBonus(basicAttackType, gameObject, hit.transform);
 
             RpcLogHit(hit.gameObject.name, (int)direction, isBonusHit, bonus.DamageMultiplier);
         }
@@ -88,10 +96,10 @@ public class PlayerCombatController : NetworkBehaviour
     }
 
     [Server]
-    public HitBonus GetHitBonus(Transform target)
+    public HitBonusData GetHitBonus(Transform target)
     {
         if (_combatManager == null)
-            return new HitBonus(1f, 0f, 0f);
+            return new HitBonusData(1f, 0f, 0f);
 
         return _combatManager.GetHitBonus(basicAttackType, gameObject, target);
     }

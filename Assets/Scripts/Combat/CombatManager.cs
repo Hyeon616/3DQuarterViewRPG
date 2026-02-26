@@ -3,67 +3,31 @@ using UnityEngine;
 public class CombatManager
 {
     private readonly int _playerLayer;
-    private readonly float _headAngle;
-    private readonly float _backAngle;
-    private readonly HitBonus _noneBonus;
-    private readonly HitBonus _backBonus;
-    private readonly HitBonus _headBonus;
+    private readonly HitDirectionDetector _directionDetector;
+    private readonly HitBonus _hitBonus;
 
-    public CombatManager(
-        int playerLayer,
-        float headAngle = 30f,
-        float backAngle = 30f,
-        float backDamageMultiplier = 1.05f,
-        float backCriticalChanceBonus = 0.1f,
-        float headDamageMultiplier = 1.2f,
-        float headStaggerDamageBonus = 0.1f)
+    public CombatManager(int playerLayer)
     {
         _playerLayer = playerLayer;
-        _headAngle = headAngle;
-        _backAngle = backAngle;
-        _noneBonus = new HitBonus(1f, 0f, 0f);
-        _backBonus = new HitBonus(backDamageMultiplier, backCriticalChanceBonus, 0f);
-        _headBonus = new HitBonus(headDamageMultiplier, 0f, headStaggerDamageBonus);
+        _directionDetector = new HitDirectionDetector();
+        _hitBonus = new HitBonus();
+    }
+
+    public CombatManager(int playerLayer, HitBonus hitBonus)
+    {
+        _playerLayer = playerLayer;
+        _directionDetector = new HitDirectionDetector();
+        _hitBonus = hitBonus;
     }
 
     public HitDirection GetHitDirection(Vector3 attackerPosition, Transform target)
     {
-        Vector3 toAttacker = attackerPosition - target.position;
-        toAttacker.y = 0f;
-        toAttacker.Normalize();
-
-        Vector3 targetForward = target.forward;
-        targetForward.y = 0f;
-        targetForward.Normalize();
-
-        float angle = Vector3.Angle(targetForward, toAttacker);
-
-        if (angle <= _headAngle)
-        {
-            return HitDirection.Head;
-        }
-
-        if (angle >= 180f - _backAngle)
-        {
-            return HitDirection.Back;
-        }
-
-        return HitDirection.Normal;
+        return _directionDetector.Detect(attackerPosition, target);
     }
 
     public HitDirection GetHitDirection(Transform attacker, Transform target)
     {
-        return GetHitDirection(attacker.position, target);
-    }
-
-    public bool IsBonusHit(AttackType attackType, HitDirection hitDirection)
-    {
-        return attackType switch
-        {
-            AttackType.Head => hitDirection == HitDirection.Head,
-            AttackType.Back => hitDirection == HitDirection.Back,
-            _ => false
-        };
+        return _directionDetector.Detect(attacker, target);
     }
 
     public bool IsPlayerToPlayer(GameObject attacker, GameObject target)
@@ -80,27 +44,22 @@ public class CombatManager
             return false;
 
         HitDirection hitDirection = GetHitDirection(attacker.transform.position, target);
-        return IsBonusHit(attackType, hitDirection);
+        return _hitBonus.IsBonusHit(attackType, hitDirection);
     }
 
-    public HitBonus GetHitBonus(AttackType attackType, GameObject attacker, Transform target)
+    public HitBonusData GetHitBonus(AttackType attackType, GameObject attacker, Transform target)
     {
         if (attackType == AttackType.Normal)
-            return _noneBonus;
+            return _hitBonus.NoneBonus;
 
         if (IsPlayerToPlayer(attacker, target.gameObject))
-            return _noneBonus;
+            return _hitBonus.NoneBonus;
 
         HitDirection hitDirection = GetHitDirection(attacker.transform.position, target);
 
-        if (!IsBonusHit(attackType, hitDirection))
-            return _noneBonus;
+        if (!_hitBonus.IsBonusHit(attackType, hitDirection))
+            return _hitBonus.NoneBonus;
 
-        return hitDirection switch
-        {
-            HitDirection.Back => _backBonus,
-            HitDirection.Head => _headBonus,
-            _ => _noneBonus
-        };
+        return _hitBonus.GetBonus(hitDirection);
     }
 }

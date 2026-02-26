@@ -2,13 +2,27 @@ using UnityEngine;
 
 public class HitZoneVisualizer : MonoBehaviour
 {
-    [Header("각도 설정")]
-    [SerializeField] private float headAngle = 45f;
-    [SerializeField] private float backAngle = 45f;
-
     private void OnDrawGizmos()
     {
-        float radius = GetColliderRadius();
+        float radius;
+        float headAngle;
+        float backAngle;
+
+        // HitZoneIndicator에서 값 가져오기
+        var indicator = GetComponentInChildren<HitZoneIndicator>();
+        if (indicator != null)
+        {
+            radius = indicator.Radius;
+            headAngle = indicator.HeadAngle;
+            backAngle = indicator.BackAngle;
+        }
+        else
+        {
+            radius = 1.5f;
+            headAngle = 45f;
+            backAngle = 45f;
+        }
+
         Vector3 forward = transform.forward;
         Vector3 position = transform.position;
 
@@ -23,27 +37,10 @@ public class HitZoneVisualizer : MonoBehaviour
         // Forward 방향 표시 - 초록색
         Gizmos.color = Color.green;
         Gizmos.DrawLine(position, position + forward * radius);
-    }
 
-    private float GetColliderRadius()
-    {
-        var capsule = GetComponent<CapsuleCollider>();
-        if (capsule != null)
-            return capsule.radius;
-
-        var sphere = GetComponent<SphereCollider>();
-        if (sphere != null)
-            return sphere.radius;
-
-        var box = GetComponent<BoxCollider>();
-        if (box != null)
-            return Mathf.Max(box.size.x, box.size.z) * 0.5f;
-
-        var col = GetComponent<Collider>();
-        if (col != null)
-            return col.bounds.extents.magnitude;
-
-        return 1f;
+        // 히트 범위 원 표시 - 빨간색
+        Gizmos.color = Color.red;
+        DrawCircle(position, radius);
     }
 
     private void DrawAngleArc(Vector3 center, Vector3 direction, float angle, float radius)
@@ -63,6 +60,20 @@ public class HitZoneVisualizer : MonoBehaviour
             float currentAngle = Mathf.Lerp(-angle, angle, t);
             Vector3 dir = Quaternion.AngleAxis(currentAngle, Vector3.up) * direction;
             Vector3 point = center + dir * radius;
+            Gizmos.DrawLine(prevPoint, point);
+            prevPoint = point;
+        }
+    }
+
+    private void DrawCircle(Vector3 center, float radius)
+    {
+        int segments = 32;
+        Vector3 prevPoint = center + Vector3.forward * radius;
+
+        for (int i = 1; i <= segments; i++)
+        {
+            float angle = (float)i / segments * 360f * Mathf.Deg2Rad;
+            Vector3 point = center + new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle)) * radius;
             Gizmos.DrawLine(prevPoint, point);
             prevPoint = point;
         }
