@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7715ed20eee26244a3984b9210bd522, type: 3}
+  m_Name: Einheri_BaseAnimationData
+  m_EditorClassIdentifier: 
+  idle: {fileID: 7400000, guid: 97815aa2b5e274945995b88149de489b, type: 3}
+  walk: {fileID: 1827226128182048838, guid: 863a3f311f6e57e4d8dea916d54b80a7, type: 3}
+  run: {fileID: 1827226128182048838, guid: 863a3f311f6e57e4d8dea916d54b80a7, type: 3}
+  runThreshold: 0.3
+  attacks: []
+  hit: {fileID: 7400000, guid: dbe7b0a64ae17e440b68678a62e53701, type: 3}
+  die: {fileID: 7400000, guid: ea4a344ad8a8c0041ab1578e38e50b55, type: 3}
