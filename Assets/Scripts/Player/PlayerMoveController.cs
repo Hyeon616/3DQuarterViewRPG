@@ -5,44 +5,48 @@ using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(PlayerInput))]
-public class PlayerMoveController : NetworkBehaviour
+public class PlayerMoveController : NetworkBehaviour, IMovement
 {
     [SerializeField] private float rotationSpeed = 10f;
     [SerializeField] private LayerMask groundLayerMask;
 
-    private NavMeshAgent agent;
-    private PlayerInput playerInput;
-    private Camera mainCamera;
-    private PlayerAnimationController animController;
+    private NavMeshAgent _agent;
+    private PlayerInput _playerInput;
+    private Camera _mainCamera;
+    private IAttackState _attackState;
+    private PlayerEvents _events;
 
-    public NavMeshAgent Agent => agent;
+    public NavMeshAgent Agent => _agent;
+    public Vector3 Velocity => _agent != null ? _agent.velocity : Vector3.zero;
+    public PlayerEvents Events => _events;
 
     private void Awake()
     {
-        agent = GetComponent<NavMeshAgent>();
-        playerInput = GetComponent<PlayerInput>();
-        animController = GetComponent<PlayerAnimationController>();
-        playerInput.enabled = false;
+        _agent = GetComponent<NavMeshAgent>();
+        _playerInput = GetComponent<PlayerInput>();
+        _attackState = GetComponent<IAttackState>();
+        _playerInput.enabled = false;
+        _events = new PlayerEvents();
     }
 
     public override void OnStartServer()
     {
         base.OnStartServer();
-        agent.enabled = true;
-        agent.updateRotation = false;
+        _agent.enabled = true;
+        _agent.updateRotation = false;
     }
 
     public override void OnStopServer()
     {
         base.OnStopServer();
-        agent.enabled = false;
+        _agent.enabled = false;
     }
 
     public override void OnStartAuthority()
     {
         base.OnStartAuthority();
-        playerInput.enabled = true;
-        mainCamera = Camera.main;
+        _playerInput.enabled = true;
+        _mainCamera = Camera.main;
 
         var cam = FindFirstObjectByType<QuarterViewCamera>();
         if (cam != null)
@@ -52,21 +56,27 @@ public class PlayerMoveController : NetworkBehaviour
     public override void OnStopAuthority()
     {
         base.OnStopAuthority();
-        playerInput.enabled = false;
+        _playerInput.enabled = false;
     }
 
     public void OnMove(InputValue value)
     {
-        if (!isOwned || mainCamera == null) return;
-        if (animController != null && animController.IsAttacking) return;
+        if (!isOwned || _mainCamera == null) return;
+        if (_attackState != null && _attackState.IsAttacking) return;
 
         RequestMove();
     }
 
+    private void Update()
+    {
+        UpdateClient();
+        UpdateServer();
+    }
+
     private void UpdateClient()
     {
-        if (!isOwned || mainCamera == null) return;
-        if (animController != null && animController.IsAttacking) return;
+        if (!isOwned || _mainCamera == null) return;
+        if (_attackState != null && _attackState.IsAttacking) return;
 
         bool isHold = Mouse.current != null && Mouse.current.rightButton.isPressed;
         if (isHold)
@@ -80,7 +90,7 @@ public class PlayerMoveController : NetworkBehaviour
         if (Mouse.current == null) return;
 
         Vector2 mousePos = Mouse.current.position.ReadValue();
-        Ray ray = mainCamera.ScreenPointToRay(mousePos);
+        Ray ray = _mainCamera.ScreenPointToRay(mousePos);
 
         if (Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayerMask))
         {
@@ -92,24 +102,19 @@ public class PlayerMoveController : NetworkBehaviour
     private void CmdMove(Vector3 destination)
     {
         float distance = Vector3.Distance(transform.position, destination);
-        if (distance < agent.stoppingDistance + 0.1f) return;
+        if (distance < _agent.stoppingDistance + 0.1f) return;
 
         if (NavMesh.SamplePosition(destination, out NavMeshHit navHit, 1f, NavMesh.AllAreas))
         {
-            agent.SetDestination(navHit.position);
+            _agent.SetDestination(navHit.position);
+            _events.RequestMove(navHit.position);
         }
-    }
-
-    private void Update()
-    {
-        UpdateClient();
-        UpdateServer();
     }
 
     private void FixedUpdate()
     {
         if (!isServer) return;
-        if (animController != null && animController.IsAttacking) return;
+        if (_attackState != null && _attackState.IsAttacking) return;
 
         FaceMovementDirection();
     }
@@ -118,11 +123,11 @@ public class PlayerMoveController : NetworkBehaviour
     {
         if (!isServer) return;
 
-        if (animController != null && animController.IsAttacking)
+        if (_attackState != null && _attackState.IsAttacking)
         {
-            if (agent.hasPath)
+            if (_agent.hasPath)
             {
-                agent.ResetPath();
+                ResetPath();
             }
         }
     }
@@ -130,12 +135,29 @@ public class PlayerMoveController : NetworkBehaviour
     [Server]
     private void FaceMovementDirection()
     {
-        Vector3 horizontalVelocity = new Vector3(agent.velocity.x, 0f, agent.velocity.z);
+        Vector3 horizontalVelocity = new Vector3(_agent.velocity.x, 0f, _agent.velocity.z);
 
         if (horizontalVelocity.sqrMagnitude > 0.1f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(horizontalVelocity.normalized);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
+        }
+    }
+
+    public void Move(Vector3 delta)
+    {
+        if (_agent != null && _agent.enabled)
+        {
+            _agent.Move(delta);
+        }
+    }
+
+    public void ResetPath()
+    {
+        if (_agent != null && _agent.hasPath)
+        {
+            _agent.ResetPath();
+            _events.StopMove();
         }
     }
 }

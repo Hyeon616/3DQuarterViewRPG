@@ -1,8 +1,7 @@
 using Mirror;
 using UnityEngine;
 
-[RequireComponent(typeof(PlayerMoveController))]
-public class PlayerAnimationController : NetworkBehaviour
+public class PlayerAnimationController : NetworkBehaviour, IAttackState
 {
     private struct AttackMoveState
     {
@@ -21,28 +20,57 @@ public class PlayerAnimationController : NetworkBehaviour
     }
 
     [SyncVar(hook = nameof(OnAnimationChanged))]
-    private string currentAnimation = BaseAnimationData.Idle;
+    private string _currentAnimation = BaseAnimationData.Idle;
 
-    [SyncVar] private bool isAttacking;
+    [SyncVar] private bool _isAttacking;
+    [SyncVar] private int _currentComboIndex;
 
-    private PlayerMoveController moveController;
-    private IAnimatable animatable;
+    private IMovement _movementProvider;
+    private IAnimatable _animatable;
+    private PlayerEvents _events;
 
-    private int currentComboIndex;
-    private float attackStartTime;
-    private float currentAttackDuration;
-    private bool nextAttackQueued;
+    private float _attackStartTime;
+    private float _currentAttackDuration;
+    private bool _nextAttackQueued;
 
-    private AttackMoveState attackMove;
-    private Vector3 queuedAttackDirection;
+    private AttackMoveState _attackMove;
+    private Vector3 _queuedAttackDirection;
 
-    private int MaxComboCount => animatable?.AttackCount ?? 0;
-    public bool IsAttacking => isAttacking;
+    private int MaxComboCount => _animatable?.AttackCount ?? 0;
+    public bool IsAttacking => _isAttacking;
+    public int CurrentComboIndex => _currentComboIndex;
 
     private void Awake()
     {
-        moveController = GetComponent<PlayerMoveController>();
-        animatable = GetComponent<IAnimatable>();
+        _movementProvider = GetComponent<IMovement>();
+        _animatable = GetComponent<IAnimatable>();
+
+        var moveController = GetComponent<PlayerMoveController>();
+        if (moveController != null)
+        {
+            _events = moveController.Events;
+        }
+    }
+
+    private void OnEnable()
+    {
+        if (_events != null)
+        {
+            _events.OnAttackRequested += HandleAttackRequested;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (_events != null)
+        {
+            _events.OnAttackRequested -= HandleAttackRequested;
+        }
+    }
+
+    private void HandleAttackRequested(Vector3 direction)
+    {
+        CmdAttack(direction);
     }
 
     private void Update()
@@ -61,36 +89,33 @@ public class PlayerAnimationController : NetworkBehaviour
     [Server]
     private void UpdateAttackMovement()
     {
-        if (!isAttacking || attackMove.Progress >= 1f || attackMove.Duration <= 0f) return;
+        if (!_isAttacking || _attackMove.Progress >= 1f || _attackMove.Duration <= 0f) return;
 
-        float moveDelta = attackMove.Speed * Time.fixedDeltaTime;
-        attackMove.Progress += Time.fixedDeltaTime / attackMove.Duration;
-        attackMove.Progress = Mathf.Clamp01(attackMove.Progress);
+        float moveDelta = _attackMove.Speed * Time.fixedDeltaTime;
+        _attackMove.Progress += Time.fixedDeltaTime / _attackMove.Duration;
+        _attackMove.Progress = Mathf.Clamp01(_attackMove.Progress);
 
-        var agent = moveController.Agent;
-        if (agent != null && agent.enabled)
-        {
-            agent.Move(attackMove.Direction * moveDelta);
-        }
+        _movementProvider?.Move(_attackMove.Direction * moveDelta);
     }
 
     [Server]
     private void ProcessAttack()
     {
-        if (!isAttacking) return;
+        if (!_isAttacking) return;
 
-        float elapsed = Time.time - attackStartTime;
+        float elapsed = Time.time - _attackStartTime;
 
-        if (elapsed >= currentAttackDuration)
+        if (elapsed >= _currentAttackDuration)
         {
-            if (nextAttackQueued)
+            if (_nextAttackQueued)
             {
-                nextAttackQueued = false;
-                ExecuteNextAttack(queuedAttackDirection);
+                _nextAttackQueued = false;
+                ExecuteNextAttack(_queuedAttackDirection);
             }
             else
             {
-                isAttacking = false;
+                _isAttacking = false;
+                _events?.EndAttack();
             }
         }
     }
@@ -98,23 +123,23 @@ public class PlayerAnimationController : NetworkBehaviour
     [Server]
     private void UpdateLocomotionAnimation()
     {
-        if (isAttacking) return;
+        if (_isAttacking) return;
 
         string targetAnim = GetLocomotionAnimation();
 
-        if (currentAnimation != targetAnim)
+        if (_currentAnimation != targetAnim)
         {
-            currentAnimation = targetAnim;
+            _currentAnimation = targetAnim;
         }
     }
 
     [Server]
     private string GetLocomotionAnimation()
     {
-        float threshold = animatable?.RunThreshold ?? 0.3f;
+        float threshold = _animatable?.RunThreshold ?? 0.3f;
+        Vector3 velocity = _movementProvider?.Velocity ?? Vector3.zero;
 
-        if (moveController.Agent != null &&
-            moveController.Agent.velocity.sqrMagnitude > threshold * threshold)
+        if (velocity.sqrMagnitude > threshold * threshold)
         {
             return BaseAnimationData.Run;
         }
@@ -124,7 +149,7 @@ public class PlayerAnimationController : NetworkBehaviour
 
     private void OnAnimationChanged(string oldAnim, string newAnim)
     {
-        animatable?.PlayAnimation(newAnim);
+        _animatable?.PlayAnimation(newAnim);
     }
 
     [Command]
@@ -132,36 +157,37 @@ public class PlayerAnimationController : NetworkBehaviour
     {
         if (MaxComboCount == 0) return;
 
-        if (isAttacking)
+        if (_isAttacking)
         {
-            nextAttackQueued = true;
-            queuedAttackDirection = direction;
+            _nextAttackQueued = true;
+            _queuedAttackDirection = direction;
             return;
         }
 
-        currentComboIndex = 0;
+        _currentComboIndex = 0;
         ExecuteNextAttack(direction);
     }
 
     [Server]
     private void ExecuteNextAttack(Vector3 direction)
     {
-        // 공격 방향으로 회전
         if (direction.sqrMagnitude > 0.01f)
         {
             transform.rotation = Quaternion.LookRotation(direction);
         }
 
-        string attackAnim = BaseAnimationData.GetAttackName(currentComboIndex);
+        string attackAnim = BaseAnimationData.GetAttackName(_currentComboIndex);
 
-        currentAnimation = attackAnim;
-        isAttacking = true;
-        attackStartTime = Time.time;
-        currentAttackDuration = animatable?.GetAnimationDuration(attackAnim) ?? 1f;
+        _currentAnimation = attackAnim;
+        _isAttacking = true;
+        _attackStartTime = Time.time;
+        _currentAttackDuration = _animatable?.GetAnimationDuration(attackAnim) ?? 1f;
 
-        var moveData = animatable?.GetAttackMoveData(attackAnim) ?? (0f, 0f);
-        attackMove.Reset(transform.forward, moveData.distance, moveData.duration);
+        var moveData = _animatable?.GetAttackMoveData(attackAnim) ?? (0f, 0f);
+        _attackMove.Reset(transform.forward, moveData.distance, moveData.duration);
 
-        currentComboIndex = (currentComboIndex + 1) % MaxComboCount;
+        _events?.StartAttack(_currentComboIndex);
+
+        _currentComboIndex = (_currentComboIndex + 1) % MaxComboCount;
     }
 }

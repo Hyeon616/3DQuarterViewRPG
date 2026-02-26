@@ -2,27 +2,30 @@ using Mirror;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(PlayerAnimationController))]
 public class PlayerAttackController : NetworkBehaviour
 {
     [Header("Hold Attack")]
     [SerializeField] private float holdAttackInterval = 0.15f;
     [SerializeField] private LayerMask groundLayerMask;
 
-    private PlayerAnimationController animController;
-    private Camera mainCamera;
-    private float lastAttackRequestTime;
-    private bool attackStarted;
+    private PlayerEvents _events;
+    private Camera _mainCamera;
+    private float _lastAttackRequestTime;
+    private bool _attackStarted;
 
     private void Awake()
     {
-        animController = GetComponent<PlayerAnimationController>();
+        var moveController = GetComponent<PlayerMoveController>();
+        if (moveController != null)
+        {
+            _events = moveController.Events;
+        }
     }
 
     public override void OnStartAuthority()
     {
         base.OnStartAuthority();
-        mainCamera = Camera.main;
+        _mainCamera = Camera.main;
     }
 
     private void Update()
@@ -31,18 +34,18 @@ public class PlayerAttackController : NetworkBehaviour
 
         bool isHold = Mouse.current != null && Mouse.current.leftButton.isPressed;
 
-        if (isHold && attackStarted)
+        if (isHold && _attackStarted)
         {
-            if (Time.time - lastAttackRequestTime >= holdAttackInterval)
+            if (Time.time - _lastAttackRequestTime >= holdAttackInterval)
             {
-                lastAttackRequestTime = Time.time;
+                _lastAttackRequestTime = Time.time;
                 RequestAttack();
             }
         }
 
         if (!isHold)
         {
-            attackStarted = false;
+            _attackStarted = false;
         }
     }
 
@@ -52,8 +55,8 @@ public class PlayerAttackController : NetworkBehaviour
 
         if (value.isPressed)
         {
-            attackStarted = true;
-            lastAttackRequestTime = Time.time;
+            _attackStarted = true;
+            _lastAttackRequestTime = Time.time;
             RequestAttack();
         }
     }
@@ -61,16 +64,16 @@ public class PlayerAttackController : NetworkBehaviour
     private void RequestAttack()
     {
         Vector3 attackDirection = GetAttackDirection();
-        animController.CmdAttack(attackDirection);
+        _events?.RequestAttack(attackDirection);
     }
 
     private Vector3 GetAttackDirection()
     {
-        if (mainCamera == null || Mouse.current == null)
+        if (_mainCamera == null || Mouse.current == null)
             return transform.forward;
 
         Vector2 mousePos = Mouse.current.position.ReadValue();
-        Ray ray = mainCamera.ScreenPointToRay(mousePos);
+        Ray ray = _mainCamera.ScreenPointToRay(mousePos);
 
         if (Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayerMask))
         {

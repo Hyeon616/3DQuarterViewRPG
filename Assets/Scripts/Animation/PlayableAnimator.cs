@@ -32,14 +32,6 @@ public class PlayableAnimator : MonoBehaviour, IAnimatable
         InitializePlayableGraph();
     }
 
-    private void Start()
-    {
-        // Animator 바인딩 갱신 후 그래프 재시작
-        animator.Rebind();
-        playableGraph.Stop();
-        playableGraph.Play();
-        Debug.Log($"[PlayableAnimator] Start() - Rebind and restart graph on {gameObject.name}");
-    }
 
     private void InitializePlayableGraph()
     {
@@ -90,17 +82,7 @@ public class PlayableAnimator : MonoBehaviour, IAnimatable
         }
 
         playableGraph.Play();
-
-        // 클립 정보 확인
-        if (clipPlayables.TryGetValue(BaseAnimationData.Idle, out var idlePlayable))
-        {
-            var clip = idlePlayable.GetAnimationClip();
-        }
-
-        // Output 및 weight 확인
-        int idleIdx = clipIndices[BaseAnimationData.Idle];
-        
-        }
+    }
 
     private void Update()
     {

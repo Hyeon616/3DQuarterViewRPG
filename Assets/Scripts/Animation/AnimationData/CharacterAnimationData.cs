@@ -7,8 +7,8 @@ public class CharacterAnimationData : ScriptableObject
     [Header("공통 애니메이션")]
     [SerializeField] private BaseAnimationData baseAnimations;
 
-    [Header("스킬 애니메이션")]
-    [SerializeField] private List<SkillAnimationData> skills;
+    [Header("스킬")]
+    [SerializeField] private List<SkillData> skills;
 
     private List<CharacterAnimation> cachedAnimations;
     private Dictionary<string, CharacterAnimation> animationLookup;
@@ -39,7 +39,7 @@ public class CharacterAnimationData : ScriptableObject
             foreach (var skill in skills)
             {
                 if (skill != null)
-                    cachedAnimations.Add(skill.GetAnimation());
+                    cachedAnimations.Add(skill.ToCharacterAnimation());
             }
         }
 
