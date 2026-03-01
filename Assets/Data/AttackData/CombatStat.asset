@@ -12,12 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66acc658108765f4e966a12e795a75ab, type: 3}
   m_Name: CombatStat
   m_EditorClassIdentifier: 
-  hpMultiplier: 1
+  hpMultiplier: 1.5
   attackMultiplier: 1
   defenseMultiplier: 1
   criticalChanceMultiplier: 1
   criticalDamageMultiplier: 1
-  resources: []
+  resources:
+  - resourceName: 
+    maxValue: 0
+    initialValue: 0
   identity:
     identityName: 
     maxValue: 0

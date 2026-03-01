@@ -51,7 +51,7 @@ MonoBehaviour:
   lineWidth: 0.05
   headColor: {r: 1, g: 0.8, b: 0, a: 1}
   backColor: {r: 0, g: 0.5, b: 1, a: 1}
-  useColliderRadius: 1
+  useColliderRadius: 0
 --- !u!1 &5314379832033999889
 GameObject:
   m_ObjectHideFlags: 0
@@ -66,6 +66,8 @@ GameObject:
   - component: {fileID: 3822982513504130707}
   - component: {fileID: 2941127914795178139}
   - component: {fileID: 8808625749214500343}
+  - component: {fileID: 2568675258695120654}
+  - component: {fileID: 1963102460562202253}
   m_Layer: 9
   m_Name: Einheri
   m_TagString: Untagged
@@ -109,8 +111,8 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 1
-  m_Height: 2.9939995
+  m_Radius: 1.5
+  m_Height: 2.9
   m_Direction: 1
   m_Center: {x: 0, y: 1.42, z: 0}
 --- !u!54 &5620286084569661714
@@ -183,8 +185,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cac0ab6e45c986e479547cea67927b17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  headAngle: 45
-  backAngle: 45
+--- !u!114 &2568675258695120654
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5314379832033999889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5510e3a4f46d13c49b2c49e2380f8dc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  monsterData: {fileID: 11400000, guid: d5733fcbf1fe12c449b8c6d88f6672b4, type: 2}
+--- !u!114 &1963102460562202253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5314379832033999889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2419b9a8a2f61364fa8a21df9848c27f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  textManager: {fileID: 0}
 --- !u!1001 &7297417207449200731
 PrefabInstance:
   m_ObjectHideFlags: 0

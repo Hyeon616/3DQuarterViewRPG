@@ -12,6 +12,14 @@ public enum AttackType
     Back
 }
 
+public enum DamageType
+{
+    Normal,
+    Critical,
+    Shield,
+    Stagger
+}
+
 public struct HitBonusData
 {
     public float DamageMultiplier;

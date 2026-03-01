@@ -4,14 +4,14 @@ using UnityEngine.InputSystem;
 
 public class PlayerAttackController : NetworkBehaviour
 {
-    [Header("Hold Attack")]
-    [SerializeField] private float holdAttackInterval = 0.15f;
+    [Header("Hold Skill")]
+    [SerializeField] private float holdSkillInterval = 0.15f;
     [SerializeField] private LayerMask groundLayerMask;
 
     private PlayerEvents _events;
     private Camera _mainCamera;
-    private float _lastAttackRequestTime;
-    private bool _attackStarted;
+    private float _lastSkillRequestTime;
+    private bool _skillHeld;
 
     private void Awake()
     {
@@ -34,18 +34,18 @@ public class PlayerAttackController : NetworkBehaviour
 
         bool isHold = Mouse.current != null && Mouse.current.leftButton.isPressed;
 
-        if (isHold && _attackStarted)
+        if (isHold && _skillHeld)
         {
-            if (Time.time - _lastAttackRequestTime >= holdAttackInterval)
+            if (Time.time - _lastSkillRequestTime >= holdSkillInterval)
             {
-                _lastAttackRequestTime = Time.time;
-                RequestAttack();
+                _lastSkillRequestTime = Time.time;
+                RequestSkill();
             }
         }
 
         if (!isHold)
         {
-            _attackStarted = false;
+            _skillHeld = false;
         }
     }
 
@@ -55,19 +55,19 @@ public class PlayerAttackController : NetworkBehaviour
 
         if (value.isPressed)
         {
-            _attackStarted = true;
-            _lastAttackRequestTime = Time.time;
-            RequestAttack();
+            _skillHeld = true;
+            _lastSkillRequestTime = Time.time;
+            RequestSkill();
         }
     }
 
-    private void RequestAttack()
+    private void RequestSkill()
     {
-        Vector3 attackDirection = GetAttackDirection();
-        _events?.RequestAttack(attackDirection);
+        Vector3 skillDirection = GetSkillDirection();
+        _events?.RequestSkill(skillDirection);
     }
 
-    private Vector3 GetAttackDirection()
+    private Vector3 GetSkillDirection()
     {
         if (_mainCamera == null || Mouse.current == null)
             return transform.forward;

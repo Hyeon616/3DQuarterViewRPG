@@ -20,20 +20,20 @@ public class BaseAnimationData : ScriptableObject
     public float RunThreshold => runThreshold;
 
     [Header("전투")]
-    [SerializeField] private AttackAnimationData[] attacks;
-    
+    [SerializeField] private SkillData[] basicAttacks;
+
     [SerializeField] private AnimationClip hit;
     [SerializeField] private AnimationClip die;
 
-    public int AttackCount => attacks != null ? attacks.Length : 0;
+    public int AttackCount => basicAttacks != null ? basicAttacks.Length : 0;
 
     public static string GetAttackName(int index) => $"{Attack}{index + 1}";
 
-    public AttackAnimationData GetAttackData(int index)
+    public SkillData GetBasicAttack(int index)
     {
-        if (attacks == null || index < 0 || index >= attacks.Length)
+        if (basicAttacks == null || index < 0 || index >= basicAttacks.Length)
             return null;
-        return attacks[index];
+        return basicAttacks[index];
     }
 
     public IEnumerable<CharacterAnimation> GetAnimations()
@@ -48,19 +48,21 @@ public class BaseAnimationData : ScriptableObject
         };
 
         // 콤보 공격 애니메이션 추가
-        if (attacks != null)
+        if (basicAttacks != null)
         {
-            for (int i = 0; i < attacks.Length; i++)
+            for (int i = 0; i < basicAttacks.Length; i++)
             {
-                if (attacks[i]?.Clip != null)
+                if (basicAttacks[i] != null)
                 {
+                    var skillAnim = basicAttacks[i].ToCharacterAnimation();
+                    // 스킬 이름 대신 Attack1, Attack2 등으로 이름 변경
                     animations.Add(new CharacterAnimation(
                         GetAttackName(i),
-                        attacks[i].Clip,
+                        basicAttacks[i].Clip,
                         true,
-                        0.1f,
-                        attacks[i].MoveDistance,
-                        attacks[i].MoveDuration
+                        basicAttacks[i].BlendDuration,
+                        basicAttacks[i].MoveDistance,
+                        basicAttacks[i].MoveDuration
                     ));
                 }
             }

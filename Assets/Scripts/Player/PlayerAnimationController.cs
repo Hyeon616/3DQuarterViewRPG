@@ -3,46 +3,63 @@ using UnityEngine;
 
 public class PlayerAnimationController : NetworkBehaviour, IAttackState
 {
-    private struct AttackMoveState
+    private struct SkillMoveState
     {
         public Vector3 Direction;
-        public float Progress;
-        public float Speed;
+        public float TotalDistance;
+        public float MovedDistance;
         public float Duration;
+        public float ElapsedTime;
 
-        public void Reset(Vector3 direction, float distance, float duration)
+        public bool IsActive => ElapsedTime < Duration && Duration > 0f;
+        public float Progress => Duration > 0f ? Mathf.Clamp01(ElapsedTime / Duration) : 1f;
+
+        public void Start(Vector3 direction, float distance, float duration)
         {
             Direction = direction;
-            Progress = 0f;
+            TotalDistance = distance;
+            MovedDistance = 0f;
             Duration = duration;
-            Speed = duration > 0f ? distance / duration : 0f;
+            ElapsedTime = 0f;
+        }
+
+        public float GetMoveDelta(float deltaTime)
+        {
+            if (!IsActive || TotalDistance <= 0f) return 0f;
+
+            ElapsedTime += deltaTime;
+            float targetDistance = (ElapsedTime / Duration) * TotalDistance;
+            float delta = targetDistance - MovedDistance;
+            MovedDistance = targetDistance;
+            return delta;
         }
     }
 
     [SyncVar(hook = nameof(OnAnimationChanged))]
     private string _currentAnimation = BaseAnimationData.Idle;
 
-    [SyncVar] private bool _isAttacking;
+    [SyncVar] private bool _isUsingSkill;
     [SyncVar] private int _currentComboIndex;
 
-    private IMovement _movementProvider;
+    private Rigidbody _rigidbody;
     private IAnimatable _animatable;
     private PlayerEvents _events;
+    private SkillData _currentSkill;
 
-    private float _attackStartTime;
-    private float _currentAttackDuration;
-    private bool _nextAttackQueued;
+    private float _skillStartTime;
+    private float _currentSkillDuration;
+    private bool _nextSkillQueued;
+    private Vector3 _queuedSkillDirection;
 
-    private AttackMoveState _attackMove;
-    private Vector3 _queuedAttackDirection;
+    private SkillMoveState _skillMove;
 
     private int MaxComboCount => _animatable?.AttackCount ?? 0;
-    public bool IsAttacking => _isAttacking;
+    public bool IsAttacking => _isUsingSkill;
     public int CurrentComboIndex => _currentComboIndex;
 
     private void Awake()
     {
-        _movementProvider = GetComponent<IMovement>();
+        _rigidbody = GetComponent<Rigidbody>();
         _animatable = GetComponent<IAnimatable>();
 
         var moveController = GetComponent<PlayerMoveController>();
@@ -56,7 +73,7 @@ public class PlayerAnimationController : NetworkBehaviour, IAttackState
     {
         if (_events != null)
         {
-            _events.OnAttackRequested += HandleAttackRequested;
+            _events.OnSkillRequested += HandleSkillRequested;
         }
     }
 
@@ -64,58 +81,60 @@ public class PlayerAnimationController : NetworkBehaviour, IAttackState
     {
         if (_events != null)
         {
-            _events.OnAttackRequested -= HandleAttackRequested;
+            _events.OnSkillRequested -= HandleSkillRequested;
         }
     }
 
-    private void HandleAttackRequested(Vector3 direction)
+    private void HandleSkillRequested(Vector3 direction)
     {
-        CmdAttack(direction);
+        CmdUseSkill(direction);
     }
 
     private void Update()
     {
         if (!isServer) return;
-        ProcessAttack();
+        ProcessSkill();
         UpdateLocomotionAnimation();
     }
 
     private void FixedUpdate()
     {
         if (!isServer) return;
-        UpdateAttackMovement();
+        UpdateSkillMovement();
     }
 
     [Server]
-    private void UpdateAttackMovement()
+    private void UpdateSkillMovement()
     {
-        if (!_isAttacking || _attackMove.Progress >= 1f || _attackMove.Duration <= 0f) return;
+        if (!_isUsingSkill || !_skillMove.IsActive) return;
 
-        float moveDelta = _attackMove.Speed * Time.fixedDeltaTime;
-        _attackMove.Progress += Time.fixedDeltaTime / _attackMove.Duration;
-        _attackMove.Progress = Mathf.Clamp01(_attackMove.Progress);
-
-        _movementProvider?.Move(_attackMove.Direction * moveDelta);
-    }
-
-    [Server]
-    private void ProcessAttack()
-    {
-        if (!_isAttacking) return;
-
-        float elapsed = Time.time - _attackStartTime;
-
-        if (elapsed >= _currentAttackDuration)
+        float moveDelta = _skillMove.GetMoveDelta(Time.fixedDeltaTime);
+        if (moveDelta > 0f)
         {
-            if (_nextAttackQueued)
+            Vector3 movement = _skillMove.Direction * moveDelta;
+            _rigidbody.MovePosition(_rigidbody.position + movement);
+        }
+    }
+
+    [Server]
+    private void ProcessSkill()
+    {
+        if (!_isUsingSkill) return;
+
+        float elapsed = Time.time - _skillStartTime;
+
+        if (elapsed >= _currentSkillDuration)
+        {
+            if (_nextSkillQueued)
             {
-                _nextAttackQueued = false;
-                ExecuteNextAttack(_queuedAttackDirection);
+                _nextSkillQueued = false;
+                ExecuteNextSkill(_queuedSkillDirection);
             }
             else
             {
-                _isAttacking = false;
-                _events?.EndAttack();
+                _isUsingSkill = false;
+                _currentSkill = null;
+                _events?.EndSkill();
             }
         }
     }
@@ -123,7 +142,7 @@ public class PlayerAnimationController : NetworkBehaviour, IAttackState
     [Server]
     private void UpdateLocomotionAnimation()
     {
-        if (_isAttacking) return;
+        if (_isUsingSkill) return;
 
         string targetAnim = GetLocomotionAnimation();
 
@@ -137,7 +156,7 @@ public class PlayerAnimationController : NetworkBehaviour, IAttackState
     private string GetLocomotionAnimation()
     {
         float threshold = _animatable?.RunThreshold ?? 0.3f;
-        Vector3 velocity = _movementProvider?.Velocity ?? Vector3.zero;
+        Vector3 velocity = _rigidbody != null ? _rigidbody.velocity : Vector3.zero;
 
         if (velocity.sqrMagnitude > threshold * threshold)
         {
@@ -153,40 +172,44 @@ public class PlayerAnimationController : NetworkBehaviour, IAttackState
     }
 
     [Command]
-    public void CmdAttack(Vector3 direction)
+    public void CmdUseSkill(Vector3 direction)
     {
         if (MaxComboCount == 0) return;
 
-        if (_isAttacking)
+        if (_isUsingSkill)
         {
-            _nextAttackQueued = true;
-            _queuedAttackDirection = direction;
+            _nextSkillQueued = true;
+            _queuedSkillDirection = direction;
             return;
         }
 
         _currentComboIndex = 0;
-        ExecuteNextAttack(direction);
+        ExecuteNextSkill(direction);
     }
 
     [Server]
-    private void ExecuteNextAttack(Vector3 direction)
+    private void ExecuteNextSkill(Vector3 direction)
     {
+        var skill = _animatable?.GetBasicAttack(_currentComboIndex);
+        if (skill == null) return;
+
+        _currentSkill = skill;
+
         if (direction.sqrMagnitude > 0.01f)
         {
             transform.rotation = Quaternion.LookRotation(direction);
         }
 
-        string attackAnim = BaseAnimationData.GetAttackName(_currentComboIndex);
+        string skillAnim = BaseAnimationData.GetAttackName(_currentComboIndex);
 
-        _currentAnimation = attackAnim;
-        _isAttacking = true;
-        _attackStartTime = Time.time;
-        _currentAttackDuration = _animatable?.GetAnimationDuration(attackAnim) ?? 1f;
+        _currentAnimation = skillAnim;
+        _isUsingSkill = true;
+        _skillStartTime = Time.time;
+        _currentSkillDuration = skill.Clip != null ? skill.Clip.length : 1f;
 
-        var moveData = _animatable?.GetAttackMoveData(attackAnim) ?? (0f, 0f);
-        _attackMove.Reset(transform.forward, moveData.distance, moveData.duration);
+        _skillMove.Start(transform.forward, skill.MoveDistance, skill.MoveDuration);
 
-        _events?.StartAttack(_currentComboIndex);
+        _events?.StartSkill(skill);
 
         _currentComboIndex = (_currentComboIndex + 1) % MaxComboCount;
     }

@@ -3,15 +3,13 @@ using UnityEngine;
 
 public class PlayerCombatController : NetworkBehaviour
 {
-    [Header("Basic Attack")]
-    [SerializeField] private AttackType basicAttackType;
-
     [Header("Hit Detection")]
-    [SerializeField] private float hitRadius = 1.5f;
+    [SerializeField] private float searchRadius = 5f;
     [SerializeField] private LayerMask hitLayerMask;
 
     private CombatManager _combatManager;
     private PlayerEvents _events;
+    private SkillData _currentSkill;
 
     private void Awake()
     {
@@ -33,7 +31,7 @@ public class PlayerCombatController : NetworkBehaviour
     {
         if (_events != null)
         {
-            _events.OnAttackStarted += HandleAttackStarted;
+            _events.OnSkillStarted += SkillExcute;
         }
     }
 
@@ -41,50 +39,49 @@ public class PlayerCombatController : NetworkBehaviour
     {
         if (_events != null)
         {
-            _events.OnAttackStarted -= HandleAttackStarted;
+            _events.OnSkillStarted -= SkillExcute;
         }
     }
 
     [Server]
-    private void HandleAttackStarted(int comboIndex)
+    private void SkillExcute(SkillData skill)
     {
+        _currentSkill = skill;
         DetectHits();
     }
 
     [Server]
     private void DetectHits()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, hitRadius, hitLayerMask);
+        if (_currentSkill == null) return;
+
+        Collider[] hits = Physics.OverlapSphere(transform.position, searchRadius, hitLayerMask);
 
         foreach (var hit in hits)
         {
             if (hit.gameObject == gameObject)
                 continue;
 
-            // 타겟의 HitZoneIndicator 범위 체크
-            var indicator = hit.GetComponentInChildren<HitZoneIndicator>();
-            if (indicator != null)
+            float hitRange = GetSkillHitRange(_currentSkill, hit);
+            float distanceToTarget = Vector3.Distance(transform.position, hit.transform.position);
+            if (distanceToTarget > hitRange)
+                continue;
+
+            HitDirection hitDirection = _combatManager.GetHitDirection(transform.position, hit.transform);
+            HitBonusData bonus = _combatManager.GetHitBonus(_currentSkill.AttackType, gameObject, hit.transform);
+
+            var damageable = hit.GetComponent<Damageable>();
+            if (damageable != null)
             {
-                float distanceToTarget = Vector3.Distance(transform.position, hit.transform.position);
-                if (distanceToTarget > indicator.Radius)
-                    continue;
+                damageable.TakeDamage(_currentSkill.BaseDamage, bonus, gameObject, DamageType.Normal, _currentSkill.AttackType, hitDirection);
             }
-
-            HitDirection direction = _combatManager.GetHitDirection(transform.position, hit.transform);
-            bool isBonusHit = _combatManager.CheckBonusHit(basicAttackType, gameObject, hit.transform);
-            HitBonusData bonus = _combatManager.GetHitBonus(basicAttackType, gameObject, hit.transform);
-
-            RpcLogHit(hit.gameObject.name, (int)direction, isBonusHit, bonus.DamageMultiplier);
         }
     }
 
-    [ClientRpc]
-    private void RpcLogHit(string targetName, int direction, bool isBonusHit, float damageMultiplier)
+    public AttackType GetCurrentAttackType()
     {
-        Debug.Log($"[Hit] Target: {targetName}, Direction: {(HitDirection)direction}, BonusHit: {isBonusHit}, DamageMultiplier: {damageMultiplier:F2}");
+        return _currentSkill?.AttackType ?? AttackType.Normal;
     }
-
-    public AttackType BasicAttackType => basicAttackType;
 
     [Server]
     public bool CheckBonusHit(Transform target)
@@ -92,7 +89,8 @@ public class PlayerCombatController : NetworkBehaviour
         if (_combatManager == null)
             return false;
 
-        return _combatManager.CheckBonusHit(basicAttackType, gameObject, target);
+        var attackType = _currentSkill?.AttackType ?? AttackType.Normal;
+        return _combatManager.CheckBonusHit(attackType, gameObject, target);
     }
 
     [Server]
@@ -101,12 +99,26 @@ public class PlayerCombatController : NetworkBehaviour
         if (_combatManager == null)
             return new HitBonusData(1f, 0f, 0f);
 
-        return _combatManager.GetHitBonus(basicAttackType, gameObject, target);
+        var attackType = _currentSkill?.AttackType ?? AttackType.Normal;
+        return _combatManager.GetHitBonus(attackType, gameObject, target);
     }
 
-    private void OnDrawGizmos()
+    private float GetSkillHitRange(SkillData skill, Collider target)
     {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, hitRadius);
+        float baseRange = skill.HitRange;
+        float colliderBonus = target switch
+        {
+            SphereCollider sphere => sphere.radius,
+            CapsuleCollider capsule => capsule.radius,
+            BoxCollider box => Mathf.Max(box.size.x, box.size.z) * 0.5f,
+            _ => 0f
+        };
+        return baseRange + colliderBonus;
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
+        Gizmos.DrawWireSphere(transform.position, searchRadius);
     }
 }

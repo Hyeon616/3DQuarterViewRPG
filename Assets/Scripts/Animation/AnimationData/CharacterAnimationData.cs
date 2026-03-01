@@ -31,9 +31,7 @@ public class CharacterAnimationData : ScriptableObject
         cachedAnimations = new List<CharacterAnimation>();
         animationLookup = new Dictionary<string, CharacterAnimation>();
 
-        if (baseAnimations != null)
-            cachedAnimations.AddRange(baseAnimations.GetAnimations());
-
+        // skills를 먼저 추가 (나중에 baseAnimations가 덮어쓰도록)
         if (skills != null)
         {
             foreach (var skill in skills)
@@ -42,6 +40,9 @@ public class CharacterAnimationData : ScriptableObject
                     cachedAnimations.Add(skill.ToCharacterAnimation());
             }
         }
+
+        if (baseAnimations != null)
+            cachedAnimations.AddRange(baseAnimations.GetAnimations());
 
         foreach (var anim in cachedAnimations)
         {
@@ -64,5 +65,10 @@ public class CharacterAnimationData : ScriptableObject
             BuildCache();
 
         return animationLookup.TryGetValue(name, out var anim) ? anim : null;
+    }
+
+    public SkillData GetBasicAttack(int index)
+    {
+        return baseAnimations?.GetBasicAttack(index);
     }
 }

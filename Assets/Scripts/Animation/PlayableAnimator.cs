@@ -173,6 +173,11 @@ public class PlayableAnimator : MonoBehaviour, IAnimatable
         return (anim.MoveDistance, anim.MoveDuration);
     }
 
+    public SkillData GetBasicAttack(int comboIndex)
+    {
+        return animationData?.GetBasicAttack(comboIndex);
+    }
+
     private void OnDestroy()
     {
         if (playableGraph.IsValid())

@@ -7,4 +7,5 @@ public interface IAnimatable
     float RunThreshold { get; }
     float GetAnimationDuration(string animationName);
     (float distance, float duration) GetAttackMoveData(string animationName);
+    SkillData GetBasicAttack(int comboIndex);
 }

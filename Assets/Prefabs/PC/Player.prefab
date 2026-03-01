@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 4545580631330673457}
   - component: {fileID: 2347200381047020699}
   - component: {fileID: 1450383811817453290}
+  - component: {fileID: 8795103239112691549}
   m_Layer: 7
   m_Name: Player
   m_TagString: Untagged
@@ -110,7 +111,7 @@ NavMeshAgent:
   m_Acceleration: 100
   avoidancePriority: 50
   m_AngularSpeed: 360
-  m_StoppingDistance: 0
+  m_StoppingDistance: 0.1
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 0
   m_AutoRepath: 1
@@ -187,7 +188,8 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   basicAttackType: 2
-  hitRadius: 0.67
+  baseDamage: 10
+  searchRadius: 5
   hitLayerMask:
     serializedVersion: 2
     m_Bits: 512
@@ -257,6 +259,33 @@ MonoBehaviour:
   positionSensitivity: 0.01
   rotationSensitivity: 0.01
   scaleSensitivity: 0.01
+--- !u!54 &8795103239112691549
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6318259307538443086}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
 --- !u!1001 &8082968255700368952
 PrefabInstance:
   m_ObjectHideFlags: 0

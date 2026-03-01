@@ -5,34 +5,48 @@ using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(PlayerInput))]
+[RequireComponent(typeof(Rigidbody))]
 public class PlayerMoveController : NetworkBehaviour, IMovement
 {
     [SerializeField] private float rotationSpeed = 10f;
     [SerializeField] private LayerMask groundLayerMask;
 
     private NavMeshAgent _agent;
+    private Rigidbody _rigidbody;
     private PlayerInput _playerInput;
     private Camera _mainCamera;
     private IAttackState _attackState;
     private PlayerEvents _events;
+    private Vector3 _destination;
 
     public NavMeshAgent Agent => _agent;
-    public Vector3 Velocity => _agent != null ? _agent.velocity : Vector3.zero;
+    public Vector3 Velocity => _rigidbody != null ? _rigidbody.velocity : Vector3.zero;
     public PlayerEvents Events => _events;
 
     private void Awake()
     {
         _agent = GetComponent<NavMeshAgent>();
+        _rigidbody = GetComponent<Rigidbody>();
         _playerInput = GetComponent<PlayerInput>();
         _attackState = GetComponent<IAttackState>();
         _playerInput.enabled = false;
         _events = new PlayerEvents();
+
+        SetupRigidbody();
+    }
+
+    private void SetupRigidbody()
+    {
+        _rigidbody.isKinematic = false;
+        _rigidbody.useGravity = false;
+        _rigidbody.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;
     }
 
     public override void OnStartServer()
     {
         base.OnStartServer();
         _agent.enabled = true;
+        _agent.updatePosition = false;
         _agent.updateRotation = false;
     }
 
@@ -106,17 +120,53 @@ public class PlayerMoveController : NetworkBehaviour, IMovement
 
         if (NavMesh.SamplePosition(destination, out NavMeshHit navHit, 1f, NavMesh.AllAreas))
         {
-            _agent.SetDestination(navHit.position);
-            _events.RequestMove(navHit.position);
+            _destination = navHit.position;
+            _agent.SetDestination(_destination);
+            _events.RequestMove(_destination);
         }
     }
 
     private void FixedUpdate()
     {
         if (!isServer) return;
+
+        SyncAgentPosition();
+
         if (_attackState != null && _attackState.IsAttacking) return;
 
+        MoveWithPhysics();
         FaceMovementDirection();
+    }
+
+    [Server]
+    private void SyncAgentPosition()
+    {
+        _agent.nextPosition = transform.position;
+    }
+
+    [Server]
+    private void MoveWithPhysics()
+    {
+        if (!_agent.hasPath)
+        {
+            _rigidbody.velocity = Vector3.zero;
+            return;
+        }
+
+        // 목적지 근처에 도달하면 멈춤 (수평 거리만 체크)
+        Vector3 toDestination = _destination - transform.position;
+        toDestination.y = 0f;
+        if (toDestination.magnitude <= _agent.stoppingDistance)
+        {
+            _rigidbody.velocity = Vector3.zero;
+            ResetPath();
+            return;
+        }
+
+        Vector3 desiredVelocity = _agent.desiredVelocity;
+        desiredVelocity.y = 0f;
+
+        _rigidbody.velocity = desiredVelocity;
     }
 
     private void UpdateServer()
@@ -135,7 +185,7 @@ public class PlayerMoveController : NetworkBehaviour, IMovement
     [Server]
     private void FaceMovementDirection()
     {
-        Vector3 horizontalVelocity = new Vector3(_agent.velocity.x, 0f, _agent.velocity.z);
+        Vector3 horizontalVelocity = new Vector3(_rigidbody.velocity.x, 0f, _rigidbody.velocity.z);
 
         if (horizontalVelocity.sqrMagnitude > 0.1f)
         {
@@ -157,6 +207,7 @@ public class PlayerMoveController : NetworkBehaviour, IMovement
         if (_agent != null && _agent.hasPath)
         {
             _agent.ResetPath();
+            _rigidbody.velocity = Vector3.zero;
             _events.StopMove();
         }
     }

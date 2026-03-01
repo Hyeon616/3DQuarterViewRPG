@@ -16,15 +16,9 @@ MonoBehaviour:
   walk: {fileID: 1827226128182048838, guid: 5643d63ea38e0e743ad8a0b8ea3bc47c, type: 3}
   run: {fileID: 1827226128182048838, guid: 7faca17c4988f994aaddf45fcdd5f66b, type: 3}
   runThreshold: 0.3
-  attacks:
-  - clip: {fileID: 1827226128182048838, guid: 0a7e5f0b74cfc1f4eb4023dd4ab120bb, type: 3}
-    moveDistance: 0.1
-    moveDuration: 0.2
-  - clip: {fileID: 1827226128182048838, guid: 235365af2710ad244b98c4dc40b55913, type: 3}
-    moveDistance: 0.1
-    moveDuration: 0.2
-  - clip: {fileID: 1827226128182048838, guid: cad0314e3f8629d4690d31c79edce092, type: 3}
-    moveDistance: 0.3
-    moveDuration: 0.2
+  basicAttacks:
+  - {fileID: 11400000, guid: 8da68d83450a6bc4b916abd93e10f6ec, type: 2}
+  - {fileID: 11400000, guid: 7c0adbff770f71348b0f82548d782312, type: 2}
+  - {fileID: 11400000, guid: 35a9a9f61ab92a54cafaffa2eff5c7e1, type: 2}
   hit: {fileID: 7400000, guid: 8398a2528f4208e4f99f8b26309b0bf6, type: 3}
   die: {fileID: 7400000, guid: 2dadb33153dbe2c44836108716f23b78, type: 3}
