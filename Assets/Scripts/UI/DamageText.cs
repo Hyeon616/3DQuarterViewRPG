@@ -3,36 +3,43 @@ using TMPro;
 
 public class DamageText : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI text;
+    [SerializeField] private TextMeshProUGUI damageText;
+    [SerializeField] private TextMeshProUGUI bonusText;
     [SerializeField] private float floatSpeed = 1f;
     [SerializeField] private float lifetime = 1f;
 
     private float _timer;
-    private Color _originalColor;
+    private Color _damageColor;
+    private Color _bonusColor;
     private Vector3 _worldPosition;
     private Camera _mainCamera;
-    private float _screenOffsetY;
 
-    public void Initialize(float damage, Vector3 worldPosition, Color color)
-    {
-        Setup(worldPosition, 0f, color);
-        text.text = Mathf.RoundToInt(damage).ToString();
-    }
-
-    public void InitializeAsBonus(string bonusText, Vector3 worldPosition, float offsetY, Color color)
-    {
-        Setup(worldPosition, offsetY, color);
-        text.text = bonusText;
-    }
-
-    private void Setup(Vector3 worldPosition, float offsetY, Color color)
+    public void Initialize(float damage, Vector3 worldPosition, Color damageColor)
     {
         _worldPosition = worldPosition;
         _mainCamera = Camera.main;
         _timer = 0f;
-        _screenOffsetY = offsetY;
-        text.color = color;
-        _originalColor = color;
+        _damageColor = damageColor;
+
+        damageText.text = Mathf.RoundToInt(damage).ToString();
+        damageText.color = damageColor;
+
+        if (bonusText != null)
+        {
+            bonusText.gameObject.SetActive(false);
+        }
+
+        UpdatePosition();
+    }
+
+    public void SetBonus(string text, Color color)
+    {
+        if (bonusText == null) return;
+
+        bonusText.gameObject.SetActive(true);
+        bonusText.text = text;
+        bonusText.color = color;
+        _bonusColor = color;
     }
 
     private void Update()
@@ -54,15 +61,22 @@ public class DamageText : MonoBehaviour
         if (_mainCamera == null) return;
 
         Vector3 screenPos = _mainCamera.WorldToScreenPoint(_worldPosition);
-        screenPos.y += _screenOffsetY;
         transform.position = screenPos;
     }
 
     private void UpdateAlpha()
     {
         float alpha = 1f - (_timer / lifetime);
-        Color color = _originalColor;
-        color.a = alpha;
-        text.color = color;
+
+        Color dColor = _damageColor;
+        dColor.a = alpha;
+        damageText.color = dColor;
+
+        if (bonusText != null && bonusText.gameObject.activeSelf)
+        {
+            Color bColor = _bonusColor;
+            bColor.a = alpha;
+            bonusText.color = bColor;
+        }
     }
 }

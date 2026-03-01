@@ -18,9 +18,11 @@ public class SkillData : ScriptableObject
     [SerializeField] private AttackType attackType;
     [SerializeField] private float baseDamage;
     [SerializeField] private float hitRange = 1.5f;
+    [SerializeField, Range(0f, 360f)] private float hitAngle = 360f;
 
     [Header("이펙트")]
     [SerializeField] private GameObject effectPrefab;
+    [SerializeField] private Vector3 effectOffset;
 
     [Header("자원")]
     [SerializeField] private float resourceCost;
@@ -34,7 +36,9 @@ public class SkillData : ScriptableObject
     public AttackType AttackType => attackType;
     public float BaseDamage => baseDamage;
     public float HitRange => hitRange;
+    public float HitAngle => hitAngle;
     public GameObject EffectPrefab => effectPrefab;
+    public Vector3 EffectOffset => effectOffset;
     public float ResourceCost => resourceCost;
     public float IdentityCharge => identityCharge;
 

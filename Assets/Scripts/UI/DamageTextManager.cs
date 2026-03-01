@@ -7,7 +7,6 @@ public class DamageTextManager : MonoBehaviour
 
     [Header("Settings")]
     [SerializeField] private Canvas canvas;
-    [SerializeField] private float bonusOffsetY = -30f;
 
     [Header("Colors")]
     [SerializeField] private Color normalColor = new Color(1f, 1f, 1f);           // FFFFFF
@@ -31,24 +30,15 @@ public class DamageTextManager : MonoBehaviour
     {
         if (canvas == null || prefab == null) return;
 
-        SpawnDamageText(data);
-        TrySpawnBonusText(data);
-    }
-
-    private void SpawnDamageText(DamageEventData data)
-    {
         var color = GetColor(data.DamageType);
         var text = Instantiate(prefab, canvas.transform);
         text.Initialize(data.Damage, data.Position, color);
-    }
 
-    private void TrySpawnBonusText(DamageEventData data)
-    {
-        if (!_resolver.IsBonusHit(data.AttackType, data.HitDirection)) return;
-
-        string bonusText = _resolver.GetBonusText(data.HitDirection);
-        var text = Instantiate(prefab, canvas.transform);
-        text.InitializeAsBonus(bonusText, data.Position, bonusOffsetY, bonusColor);
+        if (_resolver.IsBonusHit(data.AttackType, data.HitDirection))
+        {
+            string bonus = _resolver.GetBonusText(data.HitDirection);
+            text.SetBonus(bonus, bonusColor);
+        }
     }
 
     private Color GetColor(DamageType type)

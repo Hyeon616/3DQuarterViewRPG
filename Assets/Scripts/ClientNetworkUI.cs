@@ -8,6 +8,7 @@ public class ClientNetworkUI : MonoBehaviour
     [Header("연결 UI")]
     [SerializeField] private GameObject connectPanel;
     [SerializeField] private Button btnConnect;
+    [SerializeField] private Button btnHost;
 
     [Header("연결 후 UI")]
     [SerializeField] private GameObject statusPanel;
@@ -15,6 +16,7 @@ public class ClientNetworkUI : MonoBehaviour
     [SerializeField] private Button btnDisconnect;
 
     private bool isConnecting;
+    private bool isHost;
 
     private void Awake()
     {
@@ -28,23 +30,44 @@ public class ClientNetworkUI : MonoBehaviour
         NetworkManager.singleton.networkAddress = "localhost";
 
         btnConnect.onClick.AddListener(OnClickConnect);
-        btnDisconnect.onClick.AddListener(OnClickDisConnect);
+        btnDisconnect.onClick.AddListener(OnClickDisconnect);
 
+        if (btnHost != null)
+        {
+            btnHost.onClick.AddListener(OnClickHost);
+        }
     }
 
     private void OnClickConnect()
     {
-        Debug.Log("Start Client");
         isConnecting = true;
+        isHost = false;
         NetworkManager.singleton.StartClient();
         ShowStatusPanel();
         textStatus.text = "연결 중...";
     }
 
-    private void OnClickDisConnect()
+    private void OnClickHost()
+    {
+        isConnecting = true;
+        isHost = true;
+        NetworkManager.singleton.StartHost();
+        ShowStatusPanel();
+        textStatus.text = "호스트 시작...";
+    }
+
+    private void OnClickDisconnect()
     {
         isConnecting = false;
-        NetworkManager.singleton.StopClient();
+        if (isHost)
+        {
+            NetworkManager.singleton.StopHost();
+        }
+        else
+        {
+            NetworkManager.singleton.StopClient();
+        }
+        isHost = false;
         ShowConnectPanel();
     }
 
@@ -62,13 +85,20 @@ public class ClientNetworkUI : MonoBehaviour
 
     void Update()
     {
-        if(!statusPanel.activeSelf)
+        if (!statusPanel.activeSelf)
             return;
 
         if (NetworkClient.isConnected)
         {
             isConnecting = false;
-            textStatus.text = $"연결됨 (ID: {NetworkClient.connection.connectionId})";
+            if (isHost)
+            {
+                textStatus.text = $"호스트 (Players: {NetworkServer.connections.Count})";
+            }
+            else
+            {
+                textStatus.text = $"연결됨 (ID: {NetworkClient.connection.connectionId})";
+            }
         }
         else if (!isConnecting)
         {

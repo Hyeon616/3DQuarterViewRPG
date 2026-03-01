@@ -19,7 +19,10 @@ MonoBehaviour:
   moveDuration: 0.2
   attackType: 2
   baseDamage: 0
-  hitRange: 1.5
-  effectPrefab: {fileID: 0}
+  hitRange: 2
+  hitAngle: 90
+  effectPrefab: {fileID: 1893033738566276, guid: b30556ad8260bb3449e36fc009f418ff,
+    type: 3}
+  effectOffset: {x: -0.15, y: 0.3, z: 0.5}
   resourceCost: 0
   identityCharge: 0

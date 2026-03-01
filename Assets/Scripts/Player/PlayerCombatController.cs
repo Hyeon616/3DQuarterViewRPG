@@ -7,36 +7,29 @@ public class PlayerCombatController : NetworkBehaviour
     [SerializeField] private float searchRadius = 5f;
     [SerializeField] private LayerMask hitLayerMask;
 
+    private NetworkEffectPool _effectPool;
     private CombatManager _combatManager;
     private PlayerEvents _events;
     private SkillData _currentSkill;
-
-    private void Awake()
-    {
-        var moveController = GetComponent<PlayerMoveController>();
-        if (moveController != null)
-        {
-            _events = moveController.Events;
-        }
-    }
 
     public override void OnStartServer()
     {
         base.OnStartServer();
         int playerLayer = LayerMask.NameToLayer("Player");
         _combatManager = new CombatManager(playerLayer);
-    }
+        _effectPool = FindAnyObjectByType<NetworkEffectPool>();
 
-    private void OnEnable()
-    {
-        if (_events != null)
+        var moveController = GetComponent<PlayerMoveController>();
+        if (moveController != null)
         {
+            _events = moveController.Events;
             _events.OnSkillStarted += SkillExcute;
         }
     }
 
-    private void OnDisable()
+    public override void OnStopServer()
     {
+        base.OnStopServer();
         if (_events != null)
         {
             _events.OnSkillStarted -= SkillExcute;
@@ -48,6 +41,18 @@ public class PlayerCombatController : NetworkBehaviour
     {
         _currentSkill = skill;
         DetectHits();
+        SpawnSkillEffect(skill);
+    }
+
+    [Server]
+    private void SpawnSkillEffect(SkillData skill)
+    {
+        if (skill.EffectPrefab == null || _effectPool == null) return;
+
+        Vector3 worldOffset = transform.TransformDirection(skill.EffectOffset);
+        Vector3 effectPosition = transform.position + worldOffset;
+
+        _effectPool.SpawnEffectOnClients(skill.EffectPrefab.name, effectPosition, transform.rotation);
     }
 
     [Server]
@@ -56,11 +61,23 @@ public class PlayerCombatController : NetworkBehaviour
         if (_currentSkill == null) return;
 
         Collider[] hits = Physics.OverlapSphere(transform.position, searchRadius, hitLayerMask);
+        float halfAngle = _currentSkill.HitAngle * 0.5f;
 
         foreach (var hit in hits)
         {
             if (hit.gameObject == gameObject)
                 continue;
+
+            Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
+            dirToTarget.y = 0f;
+
+            // 각도 체크 (360도면 전방위)
+            if (_currentSkill.HitAngle < 360f)
+            {
+                float angle = Vector3.Angle(transform.forward, dirToTarget);
+                if (angle > halfAngle)
+                    continue;
+            }
 
             float hitRange = GetSkillHitRange(_currentSkill, hit);
             float distanceToTarget = Vector3.Distance(transform.position, hit.transform.position);
