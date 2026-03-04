@@ -4,12 +4,14 @@ using UnityEngine;
 
 public class NetworkEffectPool : NetworkBehaviour
 {
-    [SerializeField] private EffectDatabase effectDatabase;
+    [SerializeField] private EffectData effectData;
     [SerializeField] private int defaultPoolSize = 5;
     [SerializeField] private Transform poolContainer;
 
     private readonly Dictionary<string, Queue<GameObject>> _pools = new();
     private readonly Dictionary<string, GameObject> _prefabLookup = new();
+
+    public EffectData EffectData => effectData;
 
     private void Awake()
     {
@@ -20,9 +22,11 @@ public class NetworkEffectPool : NetworkBehaviour
             poolContainer = container.transform;
         }
 
-        if (effectDatabase != null)
+        if (effectData != null)
         {
-            RegisterPrefabs(effectDatabase.EffectPrefabs);
+            RegisterPrefabs(effectData.EffectPrefabs);
+            RegisterPrefab(effectData.DefaultHitEffectPrefab);
+            RegisterPrefab(effectData.DefaultBonusHitEffectPrefab);
         }
     }
 

@@ -135,9 +135,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   rotationSpeed: 10
-  groundLayerMask:
-    serializedVersion: 2
-    m_Bits: 64
+  characterData: {fileID: 11400000, guid: b439fd8777037064bad2b9124ace896f, type: 2}
 --- !u!114 &3203187112201756061
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -168,10 +166,8 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  holdAttackInterval: 0.15
-  groundLayerMask:
-    serializedVersion: 2
-    m_Bits: 64
+  holdSkillInterval: 0.15
+  characterData: {fileID: 11400000, guid: b439fd8777037064bad2b9124ace896f, type: 2}
 --- !u!114 &4454652316740462959
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -187,12 +183,8 @@ MonoBehaviour:
   syncDirection: 0
   syncMode: 0
   syncInterval: 0
-  basicAttackType: 2
-  baseDamage: 10
   searchRadius: 5
-  hitLayerMask:
-    serializedVersion: 2
-    m_Bits: 512
+  characterData: {fileID: 11400000, guid: b439fd8777037064bad2b9124ace896f, type: 2}
 --- !u!114 &4545580631330673457
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -205,8 +197,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78128160c5d17c84eaa8f6efc9510a2f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animationData: {fileID: 11400000, guid: b439fd8777037064bad2b9124ace896f, type: 2}
-  animator: {fileID: 1659717037989615514}
+  _animationData: {fileID: 11400000, guid: b439fd8777037064bad2b9124ace896f, type: 2}
+  _animator: {fileID: 1659717037989615514}
 --- !u!114 &2347200381047020699
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -392,7 +384,11 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1900169496889937993, guid: 886cd7e8ef90ac7419dce03c89190dac,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7718930941232815229}
   m_SourcePrefab: {fileID: 100100000, guid: 886cd7e8ef90ac7419dce03c89190dac, type: 3}
 --- !u!4 &880481200181955634 stripped
 Transform:
@@ -406,3 +402,31 @@ Animator:
     type: 3}
   m_PrefabInstance: {fileID: 8082968255700368952}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &7670398563396824689 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1900169496889937993, guid: 886cd7e8ef90ac7419dce03c89190dac,
+    type: 3}
+  m_PrefabInstance: {fileID: 8082968255700368952}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7718930941232815229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7670398563396824689}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfd66ecc928ce1741b8ea6602fdefe8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  syncDirection: 0
+  syncMode: 0
+  syncInterval: 0
+  footstepData: {fileID: 11400000, guid: 96388687147a68c46ac3d5b3e8b6416d, type: 2}
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
+  raycastDistance: 2
+  ownVolume: 0.5
+  otherVolume: 0.15

@@ -13,12 +13,12 @@ public class CameraOcclusionController : MonoBehaviour
     [SerializeField] private float transparentAlpha = 0.3f;
     [SerializeField] private float fadeSpeed = 5f;
 
-    private Transform target;
-    private Camera mainCamera;
+    private Transform _target;
+    private Camera _mainCamera;
 
-    private Dictionary<Renderer, MaterialData> affectedRenderers = new();
-    private HashSet<Renderer> currentFrameObstacles = new();
-    private Shader speedTreeTransparentShader;
+    private Dictionary<Renderer, MaterialData> _affectedRenderers = new();
+    private HashSet<Renderer> _currentFrameObstacles = new();
+    private Shader _speedTreeTransparentShader;
 
     private struct MaterialData
     {
@@ -29,30 +29,30 @@ public class CameraOcclusionController : MonoBehaviour
 
     public void SetTarget(Transform newTarget)
     {
-        target = newTarget;
-        mainCamera = Camera.main;
+        _target = newTarget;
+        _mainCamera = Camera.main;
         LoadCustomShader();
     }
 
     private void LoadCustomShader()
     {
-        if (speedTreeTransparentShader == null)
-            speedTreeTransparentShader = Shader.Find("Custom/SpeedTree8_Transparent");
+        if (_speedTreeTransparentShader == null)
+            _speedTreeTransparentShader = Shader.Find("Custom/SpeedTree8_Transparent");
     }
 
     private void LateUpdate()
     {
-        if (target == null || mainCamera == null) return;
+        if (_target == null || _mainCamera == null) return;
 
-        currentFrameObstacles.Clear();
+        _currentFrameObstacles.Clear();
         DetectObstacles();
         UpdateObstacleTransparency();
     }
 
     private void DetectObstacles()
     {
-        Vector3 cameraPos = mainCamera.transform.position;
-        Vector3 basePos = target.position;
+        Vector3 cameraPos = _mainCamera.transform.position;
+        Vector3 basePos = _target.position;
 
         // 캐릭터의 여러 포인트로 레이캐스트
         Vector3[] targetPoints = new Vector3[]
@@ -60,8 +60,8 @@ public class CameraOcclusionController : MonoBehaviour
             basePos + Vector3.up * characterHeight,                    // 머리
             basePos + Vector3.up * (characterHeight * 0.5f),           // 몸통 중앙
             basePos + Vector3.up * 0.1f,                               // 발
-            basePos + Vector3.up * (characterHeight * 0.5f) + target.right * characterRadius,  // 몸통 오른쪽
-            basePos + Vector3.up * (characterHeight * 0.5f) - target.right * characterRadius,  // 몸통 왼쪽
+            basePos + Vector3.up * (characterHeight * 0.5f) + _target.right * characterRadius,  // 몸통 오른쪽
+            basePos + Vector3.up * (characterHeight * 0.5f) - _target.right * characterRadius,  // 몸통 왼쪽
         };
 
         foreach (Vector3 targetPos in targetPoints)
@@ -79,9 +79,9 @@ public class CameraOcclusionController : MonoBehaviour
 
                 if (rend != null)
                 {
-                    currentFrameObstacles.Add(rend);
+                    _currentFrameObstacles.Add(rend);
 
-                    if (!affectedRenderers.ContainsKey(rend))
+                    if (!_affectedRenderers.ContainsKey(rend))
                     {
                         RegisterObstacle(rend);
                     }
@@ -101,7 +101,7 @@ public class CameraOcclusionController : MonoBehaviour
             SetMaterialTransparent(transparents[i]);
         }
 
-        affectedRenderers[renderer] = new MaterialData
+        _affectedRenderers[renderer] = new MaterialData
         {
             OriginalMaterials = originals,
             TransparentMaterials = transparents,
@@ -116,9 +116,9 @@ public class CameraOcclusionController : MonoBehaviour
         List<Renderer> toRemove = new();
         Dictionary<Renderer, MaterialData> toUpdate = new();
 
-        foreach (Renderer rend in affectedRenderers.Keys.ToList())
+        foreach (Renderer rend in _affectedRenderers.Keys.ToList())
         {
-            MaterialData data = affectedRenderers[rend];
+            MaterialData data = _affectedRenderers[rend];
 
             if (rend == null)
             {
@@ -126,7 +126,7 @@ public class CameraOcclusionController : MonoBehaviour
                 continue;
             }
 
-            bool isBlocking = currentFrameObstacles.Contains(rend);
+            bool isBlocking = _currentFrameObstacles.Contains(rend);
             float targetAlpha = isBlocking ? transparentAlpha : 1f;
 
             data.CurrentAlpha = Mathf.MoveTowards(data.CurrentAlpha, targetAlpha, fadeSpeed * Time.deltaTime);
@@ -157,12 +157,12 @@ public class CameraOcclusionController : MonoBehaviour
         foreach (var kvp in toUpdate)
         {
             if (!toRemove.Contains(kvp.Key))
-                affectedRenderers[kvp.Key] = kvp.Value;
+                _affectedRenderers[kvp.Key] = kvp.Value;
         }
 
         foreach (var rend in toRemove)
         {
-            affectedRenderers.Remove(rend);
+            _affectedRenderers.Remove(rend);
         }
     }
 
@@ -223,7 +223,7 @@ public class CameraOcclusionController : MonoBehaviour
         // 나뭇잎: 커스텀 SpeedTree8 투명 셰이더로 교체
         if (IsLeavesMaterial(mat))
         {
-            if (speedTreeTransparentShader != null)
+            if (_speedTreeTransparentShader != null)
             {
                 // 셰이더 변경 전에 SpeedTree8 속성 저장
                 Texture mainTex = mat.HasProperty(MainTexId) ? mat.GetTexture(MainTexId) : null;
@@ -237,7 +237,7 @@ public class CameraOcclusionController : MonoBehaviour
                 bool hasHueVariation = mat.IsKeywordEnabled("EFFECT_HUE_VARIATION");
 
                 // 셰이더 변경
-                mat.shader = speedTreeTransparentShader;
+                mat.shader = _speedTreeTransparentShader;
 
                 // SpeedTree8 속성 복원
                 if (mainTex != null)
@@ -286,7 +286,7 @@ public class CameraOcclusionController : MonoBehaviour
     private void OnDestroy()
     {
         // 정리
-        foreach (var kvp in affectedRenderers)
+        foreach (var kvp in _affectedRenderers)
         {
             if (kvp.Key != null)
             {
@@ -298,6 +298,6 @@ public class CameraOcclusionController : MonoBehaviour
                 if (mat != null) Destroy(mat);
             }
         }
-        affectedRenderers.Clear();
+        _affectedRenderers.Clear();
     }
 }

@@ -5,9 +5,11 @@ public class PlayerCombatController : NetworkBehaviour
 {
     [Header("Hit Detection")]
     [SerializeField] private float searchRadius = 5f;
-    [SerializeField] private LayerMask hitLayerMask;
+    [SerializeField] private CharacterData characterData;
 
     private NetworkEffectPool _effectPool;
+    private NetworkSoundPool _soundPool;
+    private EffectData _effectDatabase;
     private CombatManager _combatManager;
     private PlayerEvents _events;
     private SkillData _currentSkill;
@@ -18,12 +20,14 @@ public class PlayerCombatController : NetworkBehaviour
         int playerLayer = LayerMask.NameToLayer("Player");
         _combatManager = new CombatManager(playerLayer);
         _effectPool = FindAnyObjectByType<NetworkEffectPool>();
+        _soundPool = FindAnyObjectByType<NetworkSoundPool>();
+        _effectDatabase = _effectPool?.EffectData;
 
         var moveController = GetComponent<PlayerMoveController>();
         if (moveController != null)
         {
             _events = moveController.Events;
-            _events.OnSkillStarted += SkillExcute;
+            _events.OnSkillStarted += SkillExecute;
         }
     }
 
@@ -32,16 +36,24 @@ public class PlayerCombatController : NetworkBehaviour
         base.OnStopServer();
         if (_events != null)
         {
-            _events.OnSkillStarted -= SkillExcute;
+            _events.OnSkillStarted -= SkillExecute;
         }
     }
 
     [Server]
-    private void SkillExcute(SkillData skill)
+    private void SkillExecute(SkillData skill)
     {
         _currentSkill = skill;
+        PlayCastSound(skill);
         DetectHits();
         SpawnSkillEffect(skill);
+    }
+
+    [Server]
+    private void PlayCastSound(SkillData skill)
+    {
+        if (skill.CastSound == null || _soundPool == null) return;
+        _soundPool.PlaySoundOnClients(skill.CastSound.name, transform.position, netIdentity);
     }
 
     [Server]
@@ -60,7 +72,7 @@ public class PlayerCombatController : NetworkBehaviour
     {
         if (_currentSkill == null) return;
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, searchRadius, hitLayerMask);
+        Collider[] hits = Physics.OverlapSphere(transform.position, searchRadius, characterData.HitLayerMask);
         float halfAngle = _currentSkill.HitAngle * 0.5f;
 
         foreach (var hit in hits)
@@ -91,8 +103,58 @@ public class PlayerCombatController : NetworkBehaviour
             if (damageable != null)
             {
                 damageable.TakeDamage(_currentSkill.BaseDamage, bonus, gameObject, DamageType.Normal, _currentSkill.AttackType, hitDirection);
+                SpawnHitEffect(hit, hitDirection);
             }
         }
+    }
+
+    [Server]
+    private void SpawnHitEffect(Collider targetCollider, HitDirection hitDirection)
+    {
+        Vector3 effectPosition = GetHitEffectPosition(targetCollider);
+
+        SpawnHitVisualEffect(hitDirection, effectPosition);
+        PlayHitSound(effectPosition);
+    }
+
+    [Server]
+    private void SpawnHitVisualEffect(HitDirection hitDirection, Vector3 effectPosition)
+    {
+        if (_effectPool == null || _effectDatabase == null) return;
+
+        bool isBonus = _currentSkill.AttackType switch
+        {
+            AttackType.Head => hitDirection == HitDirection.Head,
+            AttackType.Back => hitDirection == HitDirection.Back,
+            _ => false
+        };
+
+        GameObject effectPrefab = isBonus && _effectDatabase.DefaultBonusHitEffectPrefab != null
+            ? _effectDatabase.DefaultBonusHitEffectPrefab
+            : _effectDatabase.DefaultHitEffectPrefab;
+
+        if (effectPrefab == null) return;
+
+        Quaternion effectRotation = Quaternion.LookRotation(transform.forward);
+        _effectPool.SpawnEffectOnClients(effectPrefab.name, effectPosition, effectRotation);
+    }
+
+    [Server]
+    private void PlayHitSound(Vector3 position)
+    {
+        if (_currentSkill?.HitSound == null || _soundPool == null) return;
+        _soundPool.PlaySoundOnClients(_currentSkill.HitSound.name, position, netIdentity);
+    }
+
+    private Vector3 GetHitEffectPosition(Collider targetCollider)
+    {
+        Vector3 targetCenter = targetCollider.bounds.center;
+        Vector3 directionToAttacker = (transform.position - targetCenter).normalized;
+
+        Vector3 surfacePoint = targetCollider.ClosestPoint(transform.position);
+        surfacePoint.y = targetCenter.y;
+
+        return surfacePoint;
     }
 
     public AttackType GetCurrentAttackType()

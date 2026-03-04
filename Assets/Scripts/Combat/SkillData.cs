@@ -24,6 +24,10 @@ public class SkillData : ScriptableObject
     [SerializeField] private GameObject effectPrefab;
     [SerializeField] private Vector3 effectOffset;
 
+    [Header("사운드")]
+    [SerializeField] private AudioClip castSound;
+    [SerializeField] private AudioClip hitSound;
+
     [Header("자원")]
     [SerializeField] private float resourceCost;
     [SerializeField] private float identityCharge;
@@ -39,6 +43,8 @@ public class SkillData : ScriptableObject
     public float HitAngle => hitAngle;
     public GameObject EffectPrefab => effectPrefab;
     public Vector3 EffectOffset => effectOffset;
+    public AudioClip CastSound => castSound;
+    public AudioClip HitSound => hitSound;
     public float ResourceCost => resourceCost;
     public float IdentityCharge => identityCharge;
 

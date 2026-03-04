@@ -15,8 +15,8 @@ public class ClientNetworkUI : MonoBehaviour
     [SerializeField] private TMP_Text textStatus;
     [SerializeField] private Button btnDisconnect;
 
-    private bool isConnecting;
-    private bool isHost;
+    private bool _isConnecting;
+    private bool _isHost;
 
     private void Awake()
     {
@@ -40,8 +40,8 @@ public class ClientNetworkUI : MonoBehaviour
 
     private void OnClickConnect()
     {
-        isConnecting = true;
-        isHost = false;
+        _isConnecting = true;
+        _isHost = false;
         NetworkManager.singleton.StartClient();
         ShowStatusPanel();
         textStatus.text = "연결 중...";
@@ -49,8 +49,8 @@ public class ClientNetworkUI : MonoBehaviour
 
     private void OnClickHost()
     {
-        isConnecting = true;
-        isHost = true;
+        _isConnecting = true;
+        _isHost = true;
         NetworkManager.singleton.StartHost();
         ShowStatusPanel();
         textStatus.text = "호스트 시작...";
@@ -58,8 +58,8 @@ public class ClientNetworkUI : MonoBehaviour
 
     private void OnClickDisconnect()
     {
-        isConnecting = false;
-        if (isHost)
+        _isConnecting = false;
+        if (_isHost)
         {
             NetworkManager.singleton.StopHost();
         }
@@ -67,7 +67,7 @@ public class ClientNetworkUI : MonoBehaviour
         {
             NetworkManager.singleton.StopClient();
         }
-        isHost = false;
+        _isHost = false;
         ShowConnectPanel();
     }
 
@@ -90,8 +90,8 @@ public class ClientNetworkUI : MonoBehaviour
 
         if (NetworkClient.isConnected)
         {
-            isConnecting = false;
-            if (isHost)
+            _isConnecting = false;
+            if (_isHost)
             {
                 textStatus.text = $"호스트 (Players: {NetworkServer.connections.Count})";
             }
@@ -100,7 +100,7 @@ public class ClientNetworkUI : MonoBehaviour
                 textStatus.text = $"연결됨 (ID: {NetworkClient.connection.connectionId})";
             }
         }
-        else if (!isConnecting)
+        else if (!_isConnecting)
         {
             ShowConnectPanel();
         }

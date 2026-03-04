@@ -24,5 +24,7 @@ MonoBehaviour:
   effectPrefab: {fileID: 1893033738566276, guid: b30556ad8260bb3449e36fc009f418ff,
     type: 3}
   effectOffset: {x: -0.15, y: 0.45, z: 0.3}
+  castSound: {fileID: 8300000, guid: 01bf621c51d8a564ea757c292a7f6672, type: 3}
+  hitSound: {fileID: 8300000, guid: 855999db89745904a907776d1fc48f48, type: 3}
   resourceCost: 0
   identityCharge: 0

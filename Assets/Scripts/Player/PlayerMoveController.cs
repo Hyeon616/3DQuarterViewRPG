@@ -9,7 +9,7 @@ using UnityEngine.InputSystem;
 public class PlayerMoveController : NetworkBehaviour, IMovement
 {
     [SerializeField] private float rotationSpeed = 10f;
-    [SerializeField] private LayerMask groundLayerMask;
+    [SerializeField] private CharacterData characterData;
 
     private NavMeshAgent _agent;
     private Rigidbody _rigidbody;
@@ -106,7 +106,7 @@ public class PlayerMoveController : NetworkBehaviour, IMovement
         Vector2 mousePos = Mouse.current.position.ReadValue();
         Ray ray = _mainCamera.ScreenPointToRay(mousePos);
 
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayerMask))
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, characterData.GroundLayerMask))
         {
             CmdMove(hit.point);
         }
