@@ -35,7 +35,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 200, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7648173412613097326
 CanvasRenderer:
@@ -170,7 +170,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 200, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1043193313843883556
 CanvasRenderer:
@@ -309,7 +309,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 185.6, y: 71.2}
+  m_SizeDelta: {x: 185.6, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &925702657863897289
 CanvasRenderer:
@@ -389,5 +389,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   damageText: {fileID: 5955235533720698209}
   bonusText: {fileID: 2884790011196696105}
-  floatSpeed: 1
   lifetime: 1
+  criticalStartScale: 2
+  scaleAnimationDuration: 0.2
+  randomOffsetRange: {x: 10, y: 20}
+  floatDistance: 25
+  floatDuration: 0.05

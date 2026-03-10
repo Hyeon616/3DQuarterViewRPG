@@ -9,7 +9,6 @@ using UnityEngine.InputSystem;
 public class PlayerMoveController : NetworkBehaviour, IMovement
 {
     [SerializeField] private float rotationSpeed = 10f;
-    [SerializeField] private CharacterData characterData;
 
     private NavMeshAgent _agent;
     private Rigidbody _rigidbody;
@@ -17,6 +16,7 @@ public class PlayerMoveController : NetworkBehaviour, IMovement
     private Camera _mainCamera;
     private IAttackState _attackState;
     private PlayerEvents _events;
+    private CharacterData _characterData;
     private Vector3 _destination;
 
     public NavMeshAgent Agent => _agent;
@@ -29,6 +29,7 @@ public class PlayerMoveController : NetworkBehaviour, IMovement
         _rigidbody = GetComponent<Rigidbody>();
         _playerInput = GetComponent<PlayerInput>();
         _attackState = GetComponent<IAttackState>();
+        _characterData = GetComponent<ICharacterData>()?.CharacterData;
         _playerInput.enabled = false;
         _events = new PlayerEvents();
 
@@ -106,7 +107,7 @@ public class PlayerMoveController : NetworkBehaviour, IMovement
         Vector2 mousePos = Mouse.current.position.ReadValue();
         Ray ray = _mainCamera.ScreenPointToRay(mousePos);
 
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, characterData.GroundLayerMask))
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, _characterData.GroundLayerMask))
         {
             CmdMove(hit.point);
         }

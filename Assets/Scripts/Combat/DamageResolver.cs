@@ -39,11 +39,10 @@ public class DamageResolver
         return UnityEngine.Random.value < criticalChance;
     }
 
-    public DamageType ResolveDamageType(bool isCritical, bool isShield, bool isStagger)
+    public DamageType ResolveDamageType(bool isShield, bool isStagger)
     {
         if (isStagger) return DamageType.Stagger;
         if (isShield) return DamageType.Shield;
-        if (isCritical) return DamageType.Critical;
         return DamageType.Normal;
     }
 }

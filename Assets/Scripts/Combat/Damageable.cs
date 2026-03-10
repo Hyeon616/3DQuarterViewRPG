@@ -6,7 +6,7 @@ public class Damageable : NetworkBehaviour, IDamageable
 {
     [SerializeField] private MonsterData monsterData;
 
-    [SyncVar(hook = nameof(OnHealthChanged))]
+    [SyncVar(hook = nameof(HealthChanged))]
     private float _currentHealth;
 
     private float _maxHealth;
@@ -34,11 +34,11 @@ public class Damageable : NetworkBehaviour, IDamageable
     [Server]
     public void TakeDamage(float damage, HitBonusData hitBonus, GameObject attacker)
     {
-        TakeDamage(damage, hitBonus, attacker, DamageType.Normal, AttackType.Normal, HitDirection.Normal);
+        TakeDamage(damage, hitBonus, attacker, DamageType.Normal, false, AttackType.Normal, HitDirection.Normal);
     }
 
     [Server]
-    public void TakeDamage(float damage, HitBonusData hitBonus, GameObject attacker, DamageType damageType, AttackType attackType, HitDirection hitDirection)
+    public void TakeDamage(float damage, HitBonusData hitBonus, GameObject attacker, DamageType damageType, bool isCritical, AttackType attackType, HitDirection hitDirection)
     {
         if (!IsAlive) return;
 
@@ -46,21 +46,22 @@ public class Damageable : NetworkBehaviour, IDamageable
         _currentHealth = Mathf.Max(0f, _currentHealth - finalDamage);
 
         Vector3 hitPosition = transform.position + Vector3.up * 2f;
-        RpcOnDamageReceived(finalDamage, hitPosition, (int)damageType, (int)attackType, (int)hitDirection);
+        DamageReceived(finalDamage, hitPosition, (int)damageType, isCritical, (int)attackType, (int)hitDirection);
 
         if (_currentHealth <= 0f)
         {
-            HandleDeath();
+            SendDeath();
         }
     }
 
     [ClientRpc]
-    private void RpcOnDamageReceived(float damage, Vector3 position, int damageType, int attackType, int hitDirection)
+    private void DamageReceived(float damage, Vector3 position, int damageType, bool isCritical, int attackType, int hitDirection)
     {
         var eventData = new DamageEventData(
             damage,
             position,
             (DamageType)damageType,
+            isCritical,
             (AttackType)attackType,
             (HitDirection)hitDirection
         );
@@ -68,19 +69,19 @@ public class Damageable : NetworkBehaviour, IDamageable
     }
 
     [Server]
-    private void HandleDeath()
+    private void SendDeath()
     {
         OnDeath?.Invoke();
-        RpcOnDeath();
+        Death();
     }
 
     [ClientRpc]
-    private void RpcOnDeath()
+    private void Death()
     {
         OnDeath?.Invoke();
     }
 
-    private void OnHealthChanged(float oldHealth, float newHealth)
+    private void HealthChanged(float oldHealth, float newHealth)
     {
         OnHealthUpdated?.Invoke(newHealth, _maxHealth);
     }

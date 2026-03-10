@@ -6,8 +6,8 @@ public class PlayerAttackController : NetworkBehaviour
 {
     [Header("Hold Skill")]
     [SerializeField] private float holdSkillInterval = 0.15f;
-    [SerializeField] private CharacterData characterData;
 
+    private CharacterData _characterData;
     private PlayerEvents _events;
     private Camera _mainCamera;
     private float _lastSkillRequestTime;
@@ -15,6 +15,8 @@ public class PlayerAttackController : NetworkBehaviour
 
     private void Awake()
     {
+        _characterData = GetComponent<ICharacterData>()?.CharacterData;
+
         var moveController = GetComponent<PlayerMoveController>();
         if (moveController != null)
         {
@@ -75,7 +77,7 @@ public class PlayerAttackController : NetworkBehaviour
         Vector2 mousePos = Mouse.current.position.ReadValue();
         Ray ray = _mainCamera.ScreenPointToRay(mousePos);
 
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, characterData.GroundLayerMask))
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, _characterData.GroundLayerMask))
         {
             Vector3 direction = hit.point - transform.position;
             direction.y = 0f;

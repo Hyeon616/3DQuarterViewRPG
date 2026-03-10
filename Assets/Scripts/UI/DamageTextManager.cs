@@ -30,9 +30,9 @@ public class DamageTextManager : MonoBehaviour
     {
         if (canvas == null || prefab == null) return;
 
-        var color = GetColor(data.DamageType);
+        var color = GetColor(data.DamageType, data.IsCritical);
         var text = Instantiate(prefab, canvas.transform);
-        text.Initialize(data.Damage, data.Position, color);
+        text.Initialize(data.Damage, data.Position, color, data.IsCritical);
 
         if (_resolver.IsBonusHit(data.AttackType, data.HitDirection))
         {
@@ -41,14 +41,13 @@ public class DamageTextManager : MonoBehaviour
         }
     }
 
-    private Color GetColor(DamageType type)
+    private Color GetColor(DamageType type, bool isCritical)
     {
         return type switch
         {
-            DamageType.Critical => criticalColor,
             DamageType.Shield => shieldColor,
             DamageType.Stagger => staggerColor,
-            _ => normalColor
+            _ => isCritical ? criticalColor : normalColor
         };
     }
 }

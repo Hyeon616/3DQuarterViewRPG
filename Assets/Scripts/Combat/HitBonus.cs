@@ -15,7 +15,6 @@ public enum AttackType
 public enum DamageType
 {
     Normal,
-    Critical,
     Shield,
     Stagger
 }

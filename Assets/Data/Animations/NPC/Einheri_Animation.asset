@@ -9,8 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 720d74ad74820cb49ad163eaa757b596, type: 3}
+  m_Script: {fileID: 11500000, guid: 2e47dfe1298b5e44d9f222701b912d73, type: 3}
   m_Name: Einheri_Animation
   m_EditorClassIdentifier: 
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
+  hitLayerMask:
+    serializedVersion: 2
+    m_Bits: 128
   baseAnimations: {fileID: 11400000, guid: f2a34fc1394e5524d9c7c07b5e451227, type: 2}
   skills: []

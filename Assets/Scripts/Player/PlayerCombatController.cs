@@ -5,8 +5,9 @@ public class PlayerCombatController : NetworkBehaviour
 {
     [Header("Hit Detection")]
     [SerializeField] private float searchRadius = 5f;
-    [SerializeField] private CharacterData characterData;
+    [SerializeField] private float baseCriticalChance = 0.05f;
 
+    private CharacterData _characterData;
     private NetworkEffectPool _effectPool;
     private NetworkSoundPool _soundPool;
     private EffectData _effectDatabase;
@@ -22,6 +23,7 @@ public class PlayerCombatController : NetworkBehaviour
         _effectPool = FindAnyObjectByType<NetworkEffectPool>();
         _soundPool = FindAnyObjectByType<NetworkSoundPool>();
         _effectDatabase = _effectPool?.EffectData;
+        _characterData = GetComponent<ICharacterData>()?.CharacterData;
 
         var moveController = GetComponent<PlayerMoveController>();
         if (moveController != null)
@@ -72,7 +74,7 @@ public class PlayerCombatController : NetworkBehaviour
     {
         if (_currentSkill == null) return;
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, searchRadius, characterData.HitLayerMask);
+        Collider[] hits = Physics.OverlapSphere(transform.position, searchRadius, _characterData.HitLayerMask);
         float halfAngle = _currentSkill.HitAngle * 0.5f;
 
         foreach (var hit in hits)
@@ -98,11 +100,12 @@ public class PlayerCombatController : NetworkBehaviour
 
             HitDirection hitDirection = _combatManager.GetHitDirection(transform.position, hit.transform);
             HitBonusData bonus = _combatManager.GetHitBonus(_currentSkill.AttackType, gameObject, hit.transform);
+            bool isCritical = RollCritical(bonus.CriticalChanceBonus);
 
             var damageable = hit.GetComponent<Damageable>();
             if (damageable != null)
             {
-                damageable.TakeDamage(_currentSkill.BaseDamage, bonus, gameObject, DamageType.Normal, _currentSkill.AttackType, hitDirection);
+                damageable.TakeDamage(_currentSkill.BaseDamage, bonus, gameObject, DamageType.Normal, isCritical, _currentSkill.AttackType, hitDirection);
                 SpawnHitEffect(hit, hitDirection);
             }
         }
@@ -193,6 +196,12 @@ public class PlayerCombatController : NetworkBehaviour
             _ => 0f
         };
         return baseRange + colliderBonus;
+    }
+
+    private bool RollCritical(float bonusChance)
+    {
+        float totalChance = baseCriticalChance + bonusChance;
+        return Random.value < totalChance;
     }
 
     private void OnDrawGizmosSelected()

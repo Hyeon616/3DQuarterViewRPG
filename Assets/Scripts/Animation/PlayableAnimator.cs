@@ -4,9 +4,11 @@ using UnityEngine.Animations;
 using UnityEngine.Playables;
 
 
-public class PlayableAnimator : MonoBehaviour, IAnimatable
+public class PlayableAnimator : MonoBehaviour, IAnimatable, ICharacterData
 {
     [SerializeField] private CharacterData _animationData;
+
+    public CharacterData CharacterData => _animationData;
     [SerializeField] private Animator _animator;
 
     private PlayableGraph _playableGraph;
