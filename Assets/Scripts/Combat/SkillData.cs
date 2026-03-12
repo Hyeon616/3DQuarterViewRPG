@@ -32,6 +32,9 @@ public class SkillData : ScriptableObject
     [SerializeField] private float resourceCost;
     [SerializeField] private float identityCharge;
 
+    [Header("쿨타임")]
+    [SerializeField] private float cooldown;
+
     public string SkillName => skillName;
     public AnimationClip Clip => clip;
     public float BlendDuration => blendDuration;
@@ -47,6 +50,7 @@ public class SkillData : ScriptableObject
     public AudioClip HitSound => hitSound;
     public float ResourceCost => resourceCost;
     public float IdentityCharge => identityCharge;
+    public float Cooldown => cooldown;
 
     public CharacterAnimation ToCharacterAnimation()
     {

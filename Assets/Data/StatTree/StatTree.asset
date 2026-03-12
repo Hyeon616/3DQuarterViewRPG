@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c74c9094ff891b444bc0f628dd4d97ed, type: 3}
+  m_Name: StatTree
+  m_EditorClassIdentifier: 
+  treeName: "\uC804\uD22C \uD2B9\uC131"
+  tiers:
+  - tierName: 1
+    nodes:
+    - {fileID: 11400000, guid: 80acdf1bf35ac464e8319efe27e14513, type: 2}
+    - {fileID: 11400000, guid: e3c5a861fee5fb64da72712e6012c76b, type: 2}
+    - {fileID: 11400000, guid: 5240f01270efaed40a48f303aab1ef4d, type: 2}
+    maxTierPoints: 40
+    requiredPointsToUnlockNext: 40
+  - tierName: 2
+    nodes:
+    - {fileID: 11400000, guid: 040096e997a8f744ebdcbfc51102f72e, type: 2}
+    - {fileID: 11400000, guid: de0496856b35f1d45b87d53f25ac07f0, type: 2}
+    - {fileID: 11400000, guid: b0408f45c14f23a48af5747a1c2582f0, type: 2}
+    - {fileID: 11400000, guid: ca41dd7c2c39b6d4c8f2c425073adf5d, type: 2}
+    maxTierPoints: 30
+    requiredPointsToUnlockNext: 30
+  - tierName: 3
+    nodes:
+    - {fileID: 11400000, guid: beb1796203271524ab4bec64773601f7, type: 2}
+    - {fileID: 11400000, guid: 66d9ee64764588b44be93962b8fa605f, type: 2}
+    - {fileID: 11400000, guid: 2711861df0e719a4c81f9d3ea8dec574, type: 2}
+    - {fileID: 11400000, guid: 640f7d9b70f31624a87963ac3aece91c, type: 2}
+    maxTierPoints: 30
+    requiredPointsToUnlockNext: 30

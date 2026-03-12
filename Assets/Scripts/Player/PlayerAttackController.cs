@@ -2,32 +2,19 @@ using Mirror;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(PlayerController))]
 public class PlayerAttackController : NetworkBehaviour
 {
     [Header("Hold Skill")]
     [SerializeField] private float holdSkillInterval = 0.15f;
 
-    private CharacterData _characterData;
-    private PlayerEvents _events;
-    private Camera _mainCamera;
+    private PlayerController _player;
     private float _lastSkillRequestTime;
     private bool _skillHeld;
 
     private void Awake()
     {
-        _characterData = GetComponent<ICharacterData>()?.CharacterData;
-
-        var moveController = GetComponent<PlayerMoveController>();
-        if (moveController != null)
-        {
-            _events = moveController.Events;
-        }
-    }
-
-    public override void OnStartAuthority()
-    {
-        base.OnStartAuthority();
-        _mainCamera = Camera.main;
+        _player = GetComponent<PlayerController>();
     }
 
     private void Update()
@@ -66,18 +53,21 @@ public class PlayerAttackController : NetworkBehaviour
     private void RequestSkill()
     {
         Vector3 skillDirection = GetSkillDirection();
-        _events?.RequestSkill(skillDirection);
+        _player.Events?.RequestSkill(skillDirection);
     }
 
     private Vector3 GetSkillDirection()
     {
-        if (_mainCamera == null || Mouse.current == null)
+        var mainCamera = _player.MainCamera;
+        var characterData = _player.CharacterData;
+
+        if (mainCamera == null || Mouse.current == null || characterData == null)
             return transform.forward;
 
         Vector2 mousePos = Mouse.current.position.ReadValue();
-        Ray ray = _mainCamera.ScreenPointToRay(mousePos);
+        Ray ray = mainCamera.ScreenPointToRay(mousePos);
 
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, _characterData.GroundLayerMask))
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, characterData.GroundLayerMask))
         {
             Vector3 direction = hit.point - transform.position;
             direction.y = 0f;

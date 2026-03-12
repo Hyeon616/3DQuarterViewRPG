@@ -1,19 +1,24 @@
 using Mirror;
 using UnityEngine;
 
+[RequireComponent(typeof(PlayerController))]
 public class PlayerCombatController : NetworkBehaviour
 {
     [Header("Hit Detection")]
     [SerializeField] private float searchRadius = 5f;
-    [SerializeField] private float baseCriticalChance = 0.05f;
 
-    private CharacterData _characterData;
+    private PlayerController _player;
     private NetworkEffectPool _effectPool;
     private NetworkSoundPool _soundPool;
     private EffectData _effectDatabase;
     private CombatManager _combatManager;
     private PlayerEvents _events;
     private SkillData _currentSkill;
+
+    private void Awake()
+    {
+        _player = GetComponent<PlayerController>();
+    }
 
     public override void OnStartServer()
     {
@@ -23,12 +28,10 @@ public class PlayerCombatController : NetworkBehaviour
         _effectPool = FindAnyObjectByType<NetworkEffectPool>();
         _soundPool = FindAnyObjectByType<NetworkSoundPool>();
         _effectDatabase = _effectPool?.EffectData;
-        _characterData = GetComponent<ICharacterData>()?.CharacterData;
+        _events = _player.Events;
 
-        var moveController = GetComponent<PlayerMoveController>();
-        if (moveController != null)
+        if (_events != null)
         {
-            _events = moveController.Events;
             _events.OnSkillStarted += SkillExecute;
         }
     }
@@ -72,9 +75,9 @@ public class PlayerCombatController : NetworkBehaviour
     [Server]
     private void DetectHits()
     {
-        if (_currentSkill == null) return;
+        if (_currentSkill == null || _player.CharacterData == null) return;
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, searchRadius, _characterData.HitLayerMask);
+        Collider[] hits = Physics.OverlapSphere(transform.position, searchRadius, _player.CharacterData.HitLayerMask);
         float halfAngle = _currentSkill.HitAngle * 0.5f;
 
         foreach (var hit in hits)
@@ -85,7 +88,6 @@ public class PlayerCombatController : NetworkBehaviour
             Vector3 dirToTarget = (hit.transform.position - transform.position).normalized;
             dirToTarget.y = 0f;
 
-            // 각도 체크 (360도면 전방위)
             if (_currentSkill.HitAngle < 360f)
             {
                 float angle = Vector3.Angle(transform.forward, dirToTarget);
@@ -105,7 +107,8 @@ public class PlayerCombatController : NetworkBehaviour
             var damageable = hit.GetComponent<Damageable>();
             if (damageable != null)
             {
-                damageable.TakeDamage(_currentSkill.BaseDamage, bonus, gameObject, DamageType.Normal, isCritical, _currentSkill.AttackType, hitDirection);
+                float finalDamage = CalculateDamage(_currentSkill.BaseDamage, isCritical);
+                damageable.TakeDamage(finalDamage, bonus, gameObject, DamageType.Normal, isCritical, _currentSkill.AttackType, hitDirection);
                 SpawnHitEffect(hit, hitDirection);
             }
         }
@@ -152,8 +155,6 @@ public class PlayerCombatController : NetworkBehaviour
     private Vector3 GetHitEffectPosition(Collider targetCollider)
     {
         Vector3 targetCenter = targetCollider.bounds.center;
-        Vector3 directionToAttacker = (transform.position - targetCenter).normalized;
-
         Vector3 surfacePoint = targetCollider.ClosestPoint(transform.position);
         surfacePoint.y = targetCenter.y;
 
@@ -198,9 +199,28 @@ public class PlayerCombatController : NetworkBehaviour
         return baseRange + colliderBonus;
     }
 
+    private float CalculateDamage(float baseDamage, bool isCritical)
+    {
+        var playerStat = _player.PlayerStat;
+        float attack = playerStat?.Attack ?? 10f;
+        float damageIncrease = playerStat?.DamageIncrease ?? 0f;
+        float damage = baseDamage + attack;
+
+        damage *= (1f + damageIncrease);
+
+        if (isCritical)
+        {
+            float critDamage = playerStat?.CriticalDamage ?? 1.5f;
+            damage *= critDamage;
+        }
+
+        return damage;
+    }
+
     private bool RollCritical(float bonusChance)
     {
-        float totalChance = baseCriticalChance + bonusChance;
+        float baseCritChance = _player.PlayerStat?.CriticalChance ?? 0.05f;
+        float totalChance = baseCritChance + bonusChance;
         return Random.value < totalChance;
     }
 

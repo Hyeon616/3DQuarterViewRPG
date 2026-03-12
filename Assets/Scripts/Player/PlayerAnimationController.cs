@@ -1,6 +1,7 @@
 using Mirror;
 using UnityEngine;
 
+[RequireComponent(typeof(PlayerController))]
 public class PlayerAnimationController : NetworkBehaviour, IAttackState
 {
     private struct SkillMoveState
@@ -40,7 +41,9 @@ public class PlayerAnimationController : NetworkBehaviour, IAttackState
 
     [SyncVar] private bool _isUsingSkill;
     [SyncVar] private int _currentComboIndex;
+    [SyncVar] private float _animationSpeed = 1f;
 
+    private PlayerController _player;
     private Rigidbody _rigidbody;
     private IAnimatable _animatable;
     private PlayerEvents _events;
@@ -59,17 +62,46 @@ public class PlayerAnimationController : NetworkBehaviour, IAttackState
 
     private void Awake()
     {
-        _rigidbody = GetComponent<Rigidbody>();
-        _animatable = GetComponent<IAnimatable>();
-
-        var moveController = GetComponent<PlayerMoveController>();
-        if (moveController != null)
-        {
-            _events = moveController.Events;
-        }
+        _player = GetComponent<PlayerController>();
     }
 
-    private void OnEnable()
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        CacheComponents();
+        SubscribeEvents();
+    }
+
+    public override void OnStopServer()
+    {
+        base.OnStopServer();
+        UnsubscribeEvents();
+    }
+
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+        CacheComponents();
+
+        if (!isServer)
+            SubscribeEvents();
+    }
+
+    public override void OnStopClient()
+    {
+        base.OnStopClient();
+        if (!isServer)
+            UnsubscribeEvents();
+    }
+
+    private void CacheComponents()
+    {
+        _rigidbody = _player.Rigidbody;
+        _animatable = _player.Animatable;
+        _events = _player.Events;
+    }
+
+    private void SubscribeEvents()
     {
         if (_events != null)
         {
@@ -77,7 +109,7 @@ public class PlayerAnimationController : NetworkBehaviour, IAttackState
         }
     }
 
-    private void OnDisable()
+    private void UnsubscribeEvents()
     {
         if (_events != null)
         {
@@ -135,6 +167,12 @@ public class PlayerAnimationController : NetworkBehaviour, IAttackState
                 _isUsingSkill = false;
                 _currentSkill = null;
                 _events?.EndSkill();
+
+                if (_animationSpeed != 1f)
+                {
+                    _animationSpeed = 1f;
+                    RpcSetAnimationSpeed(1f);
+                }
             }
         }
     }
@@ -193,6 +231,10 @@ public class PlayerAnimationController : NetworkBehaviour, IAttackState
         var skill = _animatable?.GetBasicAttack(_currentComboIndex);
         if (skill == null) return;
 
+        var skillCooldown = _player.SkillCooldown;
+        if (skillCooldown != null && skillCooldown.IsOnCooldown(skill))
+            return;
+
         _currentSkill = skill;
 
         if (direction.sqrMagnitude > 0.01f)
@@ -202,15 +244,32 @@ public class PlayerAnimationController : NetworkBehaviour, IAttackState
 
         string skillAnim = BaseAnimationData.GetAttackName(_currentComboIndex);
 
+        float attackSpeedBonus = _player.PlayerStat?.AttackSpeed ?? 0f;
+        float speedMultiplier = 1f + attackSpeedBonus;
+
         _currentAnimation = skillAnim;
         _isUsingSkill = true;
         _skillStartTime = Time.time;
-        _currentSkillDuration = skill.Clip != null ? skill.Clip.length : 1f;
 
-        _skillMove.Start(transform.forward, skill.MoveDistance, skill.MoveDuration);
+        float baseClipLength = skill.Clip != null ? skill.Clip.length : 1f;
+        _currentSkillDuration = baseClipLength / speedMultiplier;
+
+        float adjustedMoveDuration = skill.MoveDuration / speedMultiplier;
+        _skillMove.Start(transform.forward, skill.MoveDistance, adjustedMoveDuration);
+
+        _animationSpeed = speedMultiplier;
+        RpcSetAnimationSpeed(speedMultiplier);
+
+        skillCooldown?.StartCooldown(skill);
 
         _events?.StartSkill(skill);
 
         _currentComboIndex = (_currentComboIndex + 1) % MaxComboCount;
+    }
+
+    [ClientRpc]
+    private void RpcSetAnimationSpeed(float speed)
+    {
+        _animatable?.SetAnimationSpeed(speed);
     }
 }
