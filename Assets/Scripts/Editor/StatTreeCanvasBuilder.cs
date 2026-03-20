@@ -13,10 +13,10 @@ public class StatTreeCanvasBuilder : EditorWindow
     private StatNodeUI nodePrefab;
     private bool autoLoaded = false;
 
-    [MenuItem("Tools/Build 전투 특성 Canvas")]
+    [MenuItem("Tools/Build Combat Traits Canvas")]
     public static void ShowWindow()
     {
-        var window = GetWindow<StatTreeCanvasBuilder>("전투 특성 Canvas Builder");
+        var window = GetWindow<StatTreeCanvasBuilder>("Combat Traits Canvas Builder");
         window.AutoLoadResources();
     }
 
@@ -29,7 +29,6 @@ public class StatTreeCanvasBuilder : EditorWindow
     {
         if (autoLoaded) return;
 
-        // Data 자동 로드
         if (statTreeData == null)
         {
             var guids = AssetDatabase.FindAssets("t:StatTreeData", new[] { DATA_PATH });
@@ -37,7 +36,6 @@ public class StatTreeCanvasBuilder : EditorWindow
                 statTreeData = AssetDatabase.LoadAssetAtPath<StatTreeData>(AssetDatabase.GUIDToAssetPath(guids[0]));
         }
 
-        // Settings 자동 로드
         if (settings == null)
         {
             var guids = AssetDatabase.FindAssets("t:StatTreeSettings", new[] { DATA_PATH });
@@ -45,14 +43,12 @@ public class StatTreeCanvasBuilder : EditorWindow
                 settings = AssetDatabase.LoadAssetAtPath<StatTreeSettings>(AssetDatabase.GUIDToAssetPath(guids[0]));
         }
 
-        // Prefab 자동 로드
         if (tierPrefab == null)
             tierPrefab = AssetDatabase.LoadAssetAtPath<StatTierUI>(PREFAB_PATH + "StatTierUI.prefab");
 
         if (nodePrefab == null)
             nodePrefab = AssetDatabase.LoadAssetAtPath<StatNodeUI>(PREFAB_PATH + "StatNodeUI.prefab");
 
-        // Scene에서 StatTreeUI 찾기
         if (targetCanvas == null)
             targetCanvas = FindAnyObjectByType<StatTreeUI>();
 
@@ -61,19 +57,17 @@ public class StatTreeCanvasBuilder : EditorWindow
 
     private void OnGUI()
     {
-        GUILayout.Label("전투 특성 Canvas Builder", EditorStyles.boldLabel);
+        GUILayout.Label("Combat Traits Canvas Builder", EditorStyles.boldLabel);
         GUILayout.Space(10);
 
-        // 자동 로드 상태 표시
         EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField("자동 로드 경로:", EditorStyles.miniLabel);
+        EditorGUILayout.LabelField("Auto Load Path:", EditorStyles.miniLabel);
         EditorGUILayout.LabelField($"Data: {DATA_PATH}", EditorStyles.miniLabel);
         EditorGUILayout.EndHorizontal();
         EditorGUILayout.LabelField($"                    Prefab: {PREFAB_PATH}", EditorStyles.miniLabel);
 
         GUILayout.Space(10);
 
-        // 필드 표시 (자동 로드되었지만 수동 변경 가능)
         statTreeData = (StatTreeData)EditorGUILayout.ObjectField("Stat Tree Data", statTreeData, typeof(StatTreeData), false);
         settings = (StatTreeSettings)EditorGUILayout.ObjectField("Settings", settings, typeof(StatTreeSettings), false);
         targetCanvas = (StatTreeUI)EditorGUILayout.ObjectField("Target Canvas (Scene)", targetCanvas, typeof(StatTreeUI), true);
@@ -82,8 +76,7 @@ public class StatTreeCanvasBuilder : EditorWindow
 
         GUILayout.Space(10);
 
-        // 새로고침 버튼
-        if (GUILayout.Button("리소스 새로고침"))
+        if (GUILayout.Button("Refresh Resources"))
         {
             autoLoaded = false;
             AutoLoadResources();
@@ -91,21 +84,20 @@ public class StatTreeCanvasBuilder : EditorWindow
 
         GUILayout.Space(10);
 
-        // 누락 리소스 안내
         if (statTreeData == null || tierPrefab == null || nodePrefab == null)
         {
             EditorGUILayout.HelpBox(
-                "일부 리소스를 찾을 수 없습니다.\n" +
-                "1. Tools > Create Stat Tree UI 먼저 실행\n" +
-                "2. Tools > Generate StatTree Assets 실행",
+                "Some resources not found.\n" +
+                "1. Run Tools > Create Combat Traits UI first\n" +
+                "2. Run Tools > Generate StatTree Assets",
                 MessageType.Warning);
         }
 
         if (targetCanvas == null)
         {
             EditorGUILayout.HelpBox(
-                "Scene에 StatTreeCanvas가 없습니다.\n" +
-                "Prefabs/UI/StatTree/StatTreeCanvas.prefab을 Scene에 배치하세요.",
+                "StatTreeCanvas not found in Scene.\n" +
+                "Place Prefabs/UI/StatTree/StatTreeCanvas.prefab in the scene.",
                 MessageType.Warning);
         }
 
@@ -123,7 +115,20 @@ public class StatTreeCanvasBuilder : EditorWindow
 
     private void BuildCanvas()
     {
-        // TiersContainer 찾기
+        var canvas = targetCanvas.GetComponent<Canvas>();
+        if (canvas != null && canvas.renderMode == RenderMode.ScreenSpaceCamera && canvas.worldCamera == null)
+        {
+            if (Camera.main != null)
+            {
+                canvas.worldCamera = Camera.main;
+                EditorUtility.SetDirty(canvas);
+            }
+            else
+            {
+                Debug.LogWarning("Main Camera not found. Assign Render Camera manually.");
+            }
+        }
+
         SerializedObject canvasSO = new SerializedObject(targetCanvas);
         Transform tiersContainer = canvasSO.FindProperty("tiersContainer").objectReferenceValue as Transform;
 
@@ -133,23 +138,19 @@ public class StatTreeCanvasBuilder : EditorWindow
             return;
         }
 
-        // 기존 자식 제거
         while (tiersContainer.childCount > 0)
         {
             DestroyImmediate(tiersContainer.GetChild(0).gameObject);
         }
 
-        // Tier별로 생성
         for (int tierIdx = 0; tierIdx < statTreeData.TierCount; tierIdx++)
         {
             var tierData = statTreeData.GetTier(tierIdx);
             if (tierData == null) continue;
 
-            // Tier UI 생성
             var tierUI = (StatTierUI)PrefabUtility.InstantiatePrefab(tierPrefab, tiersContainer);
             tierUI.name = $"Tier_{tierIdx}_{tierData.TierName}";
 
-            // Tier 필드 설정
             SerializedObject tierSO = new SerializedObject(tierUI);
 
             var tierNameText = tierSO.FindProperty("tierNameText").objectReferenceValue as TMPro.TextMeshProUGUI;
@@ -160,7 +161,6 @@ public class StatTreeCanvasBuilder : EditorWindow
             if (progressText != null)
                 progressText.text = $"0/{tierData.MaxTierPoints}";
 
-            // Settings에서 스프라이트 적용
             if (settings != null)
             {
                 var leftInfoBackground = tierSO.FindProperty("leftInfoBackground").objectReferenceValue as UnityEngine.UI.Image;
@@ -174,7 +174,6 @@ public class StatTreeCanvasBuilder : EditorWindow
 
             Transform nodesContainer = tierSO.FindProperty("nodesContainer").objectReferenceValue as Transform;
 
-            // 노드 생성
             if (nodesContainer != null && tierData.Nodes != null)
             {
                 for (int nodeIdx = 0; nodeIdx < tierData.Nodes.Length; nodeIdx++)
@@ -182,11 +181,9 @@ public class StatTreeCanvasBuilder : EditorWindow
                     var nodeData = tierData.Nodes[nodeIdx];
                     if (nodeData == null) continue;
 
-                    // Node UI 생성
                     var nodeUI = (StatNodeUI)PrefabUtility.InstantiatePrefab(nodePrefab, nodesContainer);
                     nodeUI.name = $"Node_{nodeIdx}_{nodeData.NodeName}";
 
-                    // Node 필드 설정
                     SerializedObject nodeSO = new SerializedObject(nodeUI);
 
                     var pointsText = nodeSO.FindProperty("pointsText").objectReferenceValue as TMPro.TextMeshProUGUI;
@@ -212,7 +209,7 @@ public class StatTreeCanvasBuilder : EditorWindow
 
         EditorUtility.SetDirty(targetCanvas);
 
-        Debug.Log($"전투 특성 Canvas 빌드 완료! Tier {statTreeData.TierCount}개, 총 노드 {CountTotalNodes()}개");
+        Debug.Log($"Combat Traits Canvas build complete! {statTreeData.TierCount} tiers, {CountTotalNodes()} nodes total");
     }
 
     private int CountTotalNodes()

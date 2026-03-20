@@ -2,6 +2,8 @@ using Mirror;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.InputSystem;
+using System;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(PlayerInput))]
@@ -9,6 +11,21 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(PlayableAnimator))]
 public class PlayerController : NetworkBehaviour
 {
+    // 필수 컴포넌트 타입 목록
+    private static readonly Type[] RequiredControllers = new Type[]
+    {
+        typeof(PlayerMoveController),
+        typeof(PlayerAttackController),
+        typeof(PlayerAnimationController),
+        typeof(PlayerCombatController),
+        typeof(PlayerSkillCooldown),
+        typeof(PlayerStatController),
+        typeof(PlayerStatAllocation),
+        typeof(PlayerEquipment),
+        typeof(PlayerDataController),
+        typeof(StatTreeUIConnector)
+    };
+
     // Action Map 이름 상수
     public static class ActionMaps
     {
@@ -52,6 +69,9 @@ public class PlayerController : NetworkBehaviour
 
     private void Awake()
     {
+        // 필수 컴포넌트 검증
+        ValidateRequiredComponents();
+
         // 공통 컴포넌트 캐싱
         _agent = GetComponent<NavMeshAgent>();
         _rigidbody = GetComponent<Rigidbody>();
@@ -69,6 +89,18 @@ public class PlayerController : NetworkBehaviour
         _playerInput.enabled = false;
         SetupRigidbody();
     }
+
+    private void ValidateRequiredComponents()
+    {
+        foreach (var type in RequiredControllers)
+        {
+            if (GetComponent(type) == null)
+            {
+                gameObject.AddComponent(type);
+            }
+        }
+    }
+
 
     private void SetupRigidbody()
     {

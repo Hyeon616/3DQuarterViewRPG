@@ -5,8 +5,8 @@ public class StatTier
 {
     [SerializeField] private string tierName;
     [SerializeField] private StatNodeData[] nodes;
-    [SerializeField] private int maxTierPoints = 40;           // 이 티어에 투자 가능한 최대 포인트
-    [SerializeField] private int requiredPointsToUnlockNext = 5; // 다음 티어 해금에 필요한 포인트
+    [SerializeField] private int maxTierPoints = 40;
+    [SerializeField] private int requiredPointsToUnlockNext = 5;
 
     public string TierName => tierName;
     public StatNodeData[] Nodes => nodes;

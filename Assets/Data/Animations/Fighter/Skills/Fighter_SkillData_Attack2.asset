@@ -18,7 +18,7 @@ MonoBehaviour:
   moveDistance: 0.1
   moveDuration: 0.2
   attackType: 2
-  baseDamage: 0
+  baseDamage: 100
   hitRange: 2
   hitAngle: 90
   effectPrefab: {fileID: 1893033738566276, guid: b30556ad8260bb3449e36fc009f418ff,
@@ -28,3 +28,4 @@ MonoBehaviour:
   hitSound: {fileID: 8300000, guid: 855999db89745904a907776d1fc48f48, type: 3}
   resourceCost: 0
   identityCharge: 0
+  cooldown: 0

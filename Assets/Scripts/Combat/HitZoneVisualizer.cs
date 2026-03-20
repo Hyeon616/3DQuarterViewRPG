@@ -23,6 +23,10 @@ public class HitZoneVisualizer : MonoBehaviour
             backAngle = 45f;
         }
 
+        // Gizmo는 월드 좌표이므로 스케일 반영
+        float maxHorizontalScale = Mathf.Max(transform.lossyScale.x, transform.lossyScale.z);
+        radius *= maxHorizontalScale;
+
         Vector3 forward = transform.forward;
         Vector3 position = transform.position;
 

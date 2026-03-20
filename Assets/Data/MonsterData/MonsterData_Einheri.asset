@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: MonsterData_Einheri
   m_EditorClassIdentifier: 
   monsterName: Einheri
-  maxHealth: 1000
+  maxHealth: 1e+13
   attack: 10
   defense: 0

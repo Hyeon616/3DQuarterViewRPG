@@ -1,48 +1,27 @@
+/// <summary>
+/// 데미지 계산 처리
+/// DamageCalculator를 통해 모디파이어 체인으로 최종 데미지 계산
+/// </summary>
 public class DamageResolver
 {
-    private readonly string _backAttackText;
-    private readonly string _headAttackText;
+    private readonly DamageCalculator _calculator;
 
-    public DamageResolver(string backAttackText = "백어택", string headAttackText = "헤드어택")
+    public DamageResolver()
     {
-        _backAttackText = backAttackText;
-        _headAttackText = headAttackText;
+        _calculator = new DamageCalculator();
+        RegisterDefaultModifiers();
     }
 
-    public bool IsBonusHit(AttackType attackType, HitDirection hitDirection)
+    private void RegisterDefaultModifiers()
     {
-        return attackType switch
-        {
-            AttackType.Back => hitDirection == HitDirection.Back,
-            AttackType.Head => hitDirection == HitDirection.Head,
-            _ => false
-        };
+        _calculator.RegisterModifier(new BaseStatModifier());
+        _calculator.RegisterModifier(new DamageIncreaseModifier());
+        _calculator.RegisterModifier(new CriticalDamageModifier());
+        _calculator.RegisterModifier(new HitBonusModifier());
     }
 
-    public string GetBonusText(HitDirection hitDirection)
+    public float CalculateDamage(DamageContext context)
     {
-        return hitDirection switch
-        {
-            HitDirection.Back => _backAttackText,
-            HitDirection.Head => _headAttackText,
-            _ => ""
-        };
-    }
-
-    public float CalculateFinalDamage(float baseDamage, HitBonusData hitBonus)
-    {
-        return baseDamage * hitBonus.DamageMultiplier;
-    }
-
-    public bool IsCriticalHit(float criticalChance)
-    {
-        return UnityEngine.Random.value < criticalChance;
-    }
-
-    public DamageType ResolveDamageType(bool isShield, bool isStagger)
-    {
-        if (isStagger) return DamageType.Stagger;
-        if (isShield) return DamageType.Shield;
-        return DamageType.Normal;
+        return _calculator.Calculate(context);
     }
 }

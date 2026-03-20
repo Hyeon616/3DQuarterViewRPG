@@ -34,19 +34,15 @@ public class StatNodeTooltip : MonoBehaviour
 
         gameObject.SetActive(true);
 
-        // 이름
         if (nameText != null)
             nameText.text = nodeData.NodeName;
 
-        // 아이콘
         if (iconImage != null && nodeData.Icon != null)
             iconImage.sprite = nodeData.Icon;
 
-        // 현재 레벨
         if (currentLevelText != null)
             currentLevelText.text = $"레벨: {currentPoints}/{nodeData.MaxPoints}";
 
-        // 현재 효과
         if (currentEffectText != null)
         {
             if (currentPoints > 0)
@@ -60,7 +56,6 @@ public class StatNodeTooltip : MonoBehaviour
             }
         }
 
-        // 다음 레벨 섹션
         bool canUpgrade = currentPoints < nodeData.MaxPoints;
         if (nextLevelSection != null)
             nextLevelSection.SetActive(canUpgrade);
@@ -79,7 +74,6 @@ public class StatNodeTooltip : MonoBehaviour
                 nextEffectText.text = FormatModifiers(nodeData.GetTotalModifiers(nextLevel));
         }
 
-        // 위치 설정
         UpdatePosition(position);
     }
 
@@ -93,14 +87,10 @@ public class StatNodeTooltip : MonoBehaviour
         if (_rectTransform == null || _canvas == null) return;
 
         RectTransform canvasRect = _canvas.transform as RectTransform;
-
-        // ScreenSpaceOverlay의 경우 worldCamera가 null
         Camera cam = _canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : _canvas.worldCamera;
 
-        // 월드 좌표를 스크린 좌표로 변환
         Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(cam, anchorWorldPosition);
 
-        // 스크린 좌표를 캔버스 로컬 좌표로 변환
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
             screenPoint,
@@ -108,25 +98,20 @@ public class StatNodeTooltip : MonoBehaviour
             out Vector2 localPoint
         );
 
-        // 툴팁 크기 (ContentSizeFitter 사용 시 업데이트 필요)
         Canvas.ForceUpdateCanvases();
         Vector2 tooltipSize = _rectTransform.sizeDelta;
         Vector2 canvasSize = canvasRect.sizeDelta;
 
-        // pivot이 (0, 0.5)이므로 localPoint 오른쪽에 툴팁 표시
         float x = localPoint.x + offset.x;
-        float y = localPoint.y; // pivot이 중앙이므로 그대로
+        float y = localPoint.y;
 
-        // 오른쪽 경계 초과 시 왼쪽에 표시
         if (x + tooltipSize.x > canvasSize.x / 2)
             x = localPoint.x - tooltipSize.x - offset.x;
 
-        // 위쪽 경계 초과
         float halfHeight = tooltipSize.y / 2;
         if (y + halfHeight > canvasSize.y / 2)
             y = canvasSize.y / 2 - halfHeight;
 
-        // 아래쪽 경계 초과
         if (y - halfHeight < -canvasSize.y / 2)
             y = -canvasSize.y / 2 + halfHeight;
 
@@ -165,7 +150,6 @@ public class StatNodeTooltip : MonoBehaviour
 
     private string FormatValue(StatType type, float value)
     {
-        // 퍼센트 기반 스탯
         if (type == StatType.CriticalChance || type == StatType.CriticalDamage ||
             type == StatType.DamageIncrease || type == StatType.AttackSpeed ||
             type == StatType.CooldownReduction || type == StatType.ManaReduction)

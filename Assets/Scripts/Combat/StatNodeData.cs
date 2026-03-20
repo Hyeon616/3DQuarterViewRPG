@@ -3,17 +3,17 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "StatNode", menuName = "Combat/Stat Node")]
 public class StatNodeData : ScriptableObject
 {
-    [Header("노드 정보")]
+    [Header("Node Info")]
     [SerializeField] private string nodeName;
     [SerializeField, TextArea] private string description;
     [SerializeField] private Sprite icon;
 
-    [Header("효과 (포인트당)")]
+    [Header("Effect Per Point")]
     [SerializeField] private StatModifier[] modifiersPerPoint;
 
-    [Header("투자 제한")]
+    [Header("Investment Limit")]
     [SerializeField] private int maxPoints = 5;
-    [SerializeField] private int costPerPoint = 1; // 1회 투자 시 소모되는 포인트
+    [SerializeField] private int costPerPoint = 1;
 
     public string NodeName => nodeName;
     public string Description => description;

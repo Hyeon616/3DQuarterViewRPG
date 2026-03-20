@@ -15,3 +15,4 @@ MonoBehaviour:
   leftInfoBackgroundSprite: {fileID: 21300000, guid: d7cd46432b35fbe4bbbb374943ac5749,
     type: 3}
   lockIconSprite: {fileID: 21300000, guid: f12b9c75565e8db4da3309e1eda66e7d, type: 3}
+  glowSprite: {fileID: 21300000, guid: 3593326a3114f2a4fb4428559d62297d, type: 3}

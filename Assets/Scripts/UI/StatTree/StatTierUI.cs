@@ -10,11 +10,16 @@ public class StatTierUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI progressText;
     [SerializeField] private Transform nodesContainer;
     [SerializeField] private Image leftInfoBackground;
-    [SerializeField] private Image lockIcon; // 잠금/비활성 아이콘
+    [SerializeField] private Image lockIcon;
 
     [Header("Colors")]
     [SerializeField] private Color activeColor = Color.white;
     [SerializeField] private Color inactiveColor = new Color(0.5f, 0.5f, 0.5f, 0.7f);
+
+    [Header("Max Points Glow Effect")]
+    [SerializeField] private Image glowImage;
+    [SerializeField] private Color glowColor = new Color(0.3f, 0.6f, 1f, 1f);
+    [SerializeField, Range(1f, 5f)] private float glowIntensity = 2.5f;
 
     [Header("Prefab")]
     [SerializeField] private StatNodeUI nodePrefab;
@@ -24,10 +29,9 @@ public class StatTierUI : MonoBehaviour
     private int _tierIndex;
     private StatNodeTooltip _tooltip;
     private List<StatNodeUI> _nodeUIs = new List<StatNodeUI>();
+    private bool _isMaxed;
+    private Material _glowMaterial;
 
-    /// <summary>
-    /// 런타임 생성 모드용 초기화
-    /// </summary>
     public void Initialize(PlayerStatAllocation allocation, StatTier tierData, int tierIndex, StatNodeUI nodePrefabOverride = null, StatNodeTooltip tooltip = null)
     {
         _allocation = allocation;
@@ -45,9 +49,6 @@ public class StatTierUI : MonoBehaviour
         UpdateDisplay();
     }
 
-    /// <summary>
-    /// 미리 빌드된 UI용 초기화 - 노드를 생성하지 않고 기존 자식들 사용
-    /// </summary>
     public void InitializePrebuilt(PlayerStatAllocation allocation, StatTier tierData, int tierIndex, StatNodeTooltip tooltip = null)
     {
         _allocation = allocation;
@@ -58,7 +59,6 @@ public class StatTierUI : MonoBehaviour
         if (tierNameText != null)
             tierNameText.text = tierData.TierName;
 
-        // 기존 자식 노드들을 찾아서 Initialize
         CollectAndInitializeNodes();
         UpdateDisplay();
     }
@@ -87,7 +87,6 @@ public class StatTierUI : MonoBehaviour
 
     private void CreateNodes()
     {
-        // 기존 노드 제거
         foreach (var nodeUI in _nodeUIs)
         {
             if (nodeUI != null)
@@ -118,23 +117,65 @@ public class StatTierUI : MonoBehaviour
         if (progressText != null)
             progressText.text = $"{spent}/{maxTierPoints}";
 
-        // 상태 확인
         bool isActive = _allocation.IsTierActive(_tierIndex);
 
-        // 잠금 아이콘: 비활성 상태일 때 표시 (잠금 또는 조건 미충족)
         if (lockIcon != null)
             lockIcon.gameObject.SetActive(!isActive);
 
-        // 배경색 변경: 비활성 시 어둡게
         if (leftInfoBackground != null)
         {
             leftInfoBackground.color = isActive ? activeColor : inactiveColor;
         }
 
-        // 노드 업데이트 (활성 상태 전달)
         foreach (var nodeUI in _nodeUIs)
         {
             nodeUI?.UpdateDisplay(isActive);
         }
+
+        bool isNowMaxed = spent >= maxTierPoints && isActive;
+        if (isNowMaxed != _isMaxed)
+        {
+            _isMaxed = isNowMaxed;
+            if (_isMaxed)
+                StartGlowEffect();
+            else
+                StopGlowEffect();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (_glowMaterial != null)
+            Destroy(_glowMaterial);
+    }
+
+    private void SetupGlowMaterial()
+    {
+        if (glowImage == null || _glowMaterial != null) return;
+
+        _glowMaterial = new Material(Shader.Find("UI/Default"));
+        _glowMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        _glowMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.One);
+        glowImage.material = _glowMaterial;
+    }
+
+    private void StartGlowEffect()
+    {
+        if (glowImage == null) return;
+
+        SetupGlowMaterial();
+        glowImage.gameObject.SetActive(true);
+        glowImage.color = new Color(
+            glowColor.r * glowIntensity,
+            glowColor.g * glowIntensity,
+            glowColor.b * glowIntensity,
+            glowColor.a
+        );
+    }
+
+    private void StopGlowEffect()
+    {
+        if (glowImage != null)
+            glowImage.gameObject.SetActive(false);
     }
 }

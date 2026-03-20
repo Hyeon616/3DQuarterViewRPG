@@ -2,25 +2,27 @@ using Mirror;
 using UnityEngine;
 using System.Collections.Generic;
 
+/// <summary>
+/// 플레이어 스탯 관리
+/// 장비 + StatTree 투자 기반 스탯 계산
+/// </summary>
 [RequireComponent(typeof(PlayerController))]
 public class PlayerStatController : NetworkBehaviour, IPlayerStat
 {
-    [Header("직업 스탯")]
-    [SerializeField] private CombatStat combatStat;
-
     [SyncVar]
     private int _level = 1;
 
     private PlayerStatAllocation _allocation;
+    private PlayerEquipment _equipment;
 
-    // 기본 스탯
+    // 기본 스탯 (장비 + 레벨)
     private float _maxHp;
     private float _attack;
     private float _defense;
     private float _criticalChance;
     private float _criticalDamage;
 
-    // 투자 스탯
+    // 투자 스탯 (StatTree)
     private float _damageIncrease;
     private float _attackSpeed;
     private float _cooldownReduction;
@@ -36,16 +38,20 @@ public class PlayerStatController : NetworkBehaviour, IPlayerStat
     public float CooldownReduction => _cooldownReduction;
     public float ManaReduction => _manaReduction;
     public int Level => _level;
-    public CombatStat CombatStat => combatStat;
+    public PlayerEquipment Equipment => _equipment;
 
     public override void OnStartServer()
     {
         base.OnStartServer();
+
         _allocation = GetComponent<PlayerStatAllocation>();
+        _equipment = GetComponent<PlayerEquipment>();
+
         if (_allocation != null)
-        {
             _allocation.OnAllocationChanged += RecalculateStats;
-        }
+        if (_equipment != null)
+            _equipment.OnEquipmentChanged += RecalculateStats;
+
         RecalculateStats();
     }
 
@@ -53,19 +59,23 @@ public class PlayerStatController : NetworkBehaviour, IPlayerStat
     {
         base.OnStopServer();
         if (_allocation != null)
-        {
             _allocation.OnAllocationChanged -= RecalculateStats;
-        }
+        if (_equipment != null)
+            _equipment.OnEquipmentChanged -= RecalculateStats;
     }
 
     public override void OnStartClient()
     {
         base.OnStartClient();
+
         _allocation = GetComponent<PlayerStatAllocation>();
+        _equipment = GetComponent<PlayerEquipment>();
+
         if (_allocation != null)
-        {
             _allocation.OnAllocationChanged += RecalculateStats;
-        }
+        if (_equipment != null)
+            _equipment.OnEquipmentChanged += RecalculateStats;
+
         RecalculateStats();
     }
 
@@ -73,9 +83,9 @@ public class PlayerStatController : NetworkBehaviour, IPlayerStat
     {
         base.OnStopClient();
         if (_allocation != null)
-        {
             _allocation.OnAllocationChanged -= RecalculateStats;
-        }
+        if (_equipment != null)
+            _equipment.OnEquipmentChanged -= RecalculateStats;
     }
 
     [Server]
@@ -84,7 +94,6 @@ public class PlayerStatController : NetworkBehaviour, IPlayerStat
         int oldLevel = _level;
         _level = Mathf.Max(1, level);
 
-        // 레벨업 시 포인트 지급
         if (_allocation != null && _level > oldLevel)
         {
             int pointsToAdd = _level - oldLevel;
@@ -95,9 +104,6 @@ public class PlayerStatController : NetworkBehaviour, IPlayerStat
         RpcRecalculateStats();
     }
 
-    /// <summary>
-    /// 테스트용 포인트 직접 추가
-    /// </summary>
     [Server]
     public void AddStatPoints(int points)
     {
@@ -112,22 +118,33 @@ public class PlayerStatController : NetworkBehaviour, IPlayerStat
 
     private void RecalculateStats()
     {
-        if (combatStat == null) return;
-
-        // 기본 스탯 (직업 + 레벨)
-        _maxHp = combatStat.GetHp(_level);
-        _attack = combatStat.GetAttack(_level);
-        _defense = combatStat.GetDefense(_level);
-        _criticalChance = combatStat.GetCriticalChance();
-        _criticalDamage = combatStat.GetCriticalDamage();
+        // 장비 기반 스탯
+        if (_equipment != null)
+        {
+            _maxHp = _equipment.GetHp(_level);
+            _attack = _equipment.GetAttack(_level);
+            _defense = _equipment.GetDefense(_level);
+            _criticalChance = _equipment.GetCriticalChance();
+            _criticalDamage = _equipment.GetCriticalDamage();
+            _attackSpeed = _equipment.GetAttackSpeed();
+        }
+        else
+        {
+            // 장비 없을 때 기본값
+            _maxHp = 100f;
+            _attack = 10f;
+            _defense = 0f;
+            _criticalChance = 0.05f;
+            _criticalDamage = 1.5f;
+            _attackSpeed = 1f;
+        }
 
         // 투자 스탯 초기화
         _damageIncrease = 0f;
-        _attackSpeed = 0f;
         _cooldownReduction = 0f;
         _manaReduction = 0f;
 
-        // 투자 효과 적용
+        // StatTree 투자 효과 적용
         if (_allocation != null)
         {
             var modifiers = _allocation.GetTotalModifiers();
@@ -151,7 +168,7 @@ public class PlayerStatController : NetworkBehaviour, IPlayerStat
                     _damageIncrease += mod.Value;
                     break;
                 case StatType.AttackSpeed:
-                    _attackSpeed += mod.Value;
+                    _attackSpeed *= (1f + mod.Value / 100f);
                     break;
                 case StatType.CooldownReduction:
                     _cooldownReduction += mod.Value;

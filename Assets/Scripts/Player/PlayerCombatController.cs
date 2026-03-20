@@ -12,6 +12,7 @@ public class PlayerCombatController : NetworkBehaviour
     private NetworkSoundPool _soundPool;
     private EffectData _effectDatabase;
     private CombatManager _combatManager;
+    private DamageResolver _damageResolver;
     private PlayerEvents _events;
     private SkillData _currentSkill;
 
@@ -25,6 +26,7 @@ public class PlayerCombatController : NetworkBehaviour
         base.OnStartServer();
         int playerLayer = LayerMask.NameToLayer("Player");
         _combatManager = new CombatManager(playerLayer);
+        _damageResolver = new DamageResolver();
         _effectPool = FindAnyObjectByType<NetworkEffectPool>();
         _soundPool = FindAnyObjectByType<NetworkSoundPool>();
         _effectDatabase = _effectPool?.EffectData;
@@ -107,8 +109,18 @@ public class PlayerCombatController : NetworkBehaviour
             var damageable = hit.GetComponent<Damageable>();
             if (damageable != null)
             {
-                float finalDamage = CalculateDamage(_currentSkill.BaseDamage, isCritical);
-                damageable.TakeDamage(finalDamage, bonus, gameObject, DamageType.Normal, isCritical, _currentSkill.AttackType, hitDirection);
+                var context = new DamageContext(
+                    gameObject,
+                    _player.PlayerStat,
+                    hit.gameObject,
+                    _currentSkill,
+                    isCritical,
+                    hitDirection,
+                    bonus
+                );
+
+                float finalDamage = _damageResolver.CalculateDamage(context);
+                damageable.TakeDamage(finalDamage, new HitBonusData(1f, 0f, 0f), gameObject, DamageType.Normal, isCritical, _currentSkill.AttackType, hitDirection);
                 SpawnHitEffect(hit, hitDirection);
             }
         }
@@ -189,38 +201,23 @@ public class PlayerCombatController : NetworkBehaviour
     private float GetSkillHitRange(SkillData skill, Collider target)
     {
         float baseRange = skill.HitRange;
+        Vector3 scale = target.transform.lossyScale;
+        float maxHorizontalScale = Mathf.Max(scale.x, scale.z);
+
         float colliderBonus = target switch
         {
-            SphereCollider sphere => sphere.radius,
-            CapsuleCollider capsule => capsule.radius,
-            BoxCollider box => Mathf.Max(box.size.x, box.size.z) * 0.5f,
+            SphereCollider sphere => sphere.radius * maxHorizontalScale,
+            CapsuleCollider capsule => capsule.radius * maxHorizontalScale,
+            BoxCollider box => Mathf.Max(box.size.x * scale.x, box.size.z * scale.z) * 0.5f,
             _ => 0f
         };
         return baseRange + colliderBonus;
     }
 
-    private float CalculateDamage(float baseDamage, bool isCritical)
-    {
-        var playerStat = _player.PlayerStat;
-        float attack = playerStat?.Attack ?? 10f;
-        float damageIncrease = playerStat?.DamageIncrease ?? 0f;
-        float damage = baseDamage + attack;
-
-        damage *= (1f + damageIncrease);
-
-        if (isCritical)
-        {
-            float critDamage = playerStat?.CriticalDamage ?? 1.5f;
-            damage *= critDamage;
-        }
-
-        return damage;
-    }
-
     private bool RollCritical(float bonusChance)
     {
-        float baseCritChance = _player.PlayerStat?.CriticalChance ?? 0.05f;
-        float totalChance = baseCritChance + bonusChance;
+        float baseCritChance = _player.PlayerStat?.CriticalChance ?? 5f;
+        float totalChance = (baseCritChance + bonusChance) / 100f;
         return Random.value < totalChance;
     }
 

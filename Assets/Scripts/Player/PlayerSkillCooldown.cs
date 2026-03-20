@@ -51,9 +51,8 @@ public class PlayerSkillCooldown : NetworkBehaviour
     {
         if (skill == null || skill.Cooldown <= 0f) return;
 
-        // 쿨타임 감소 적용 (CooldownReduction 0.1 = 10% 감소)
         float cooldownReduction = _player.PlayerStat?.CooldownReduction ?? 0f;
-        float reducedCooldown = skill.Cooldown * (1f - cooldownReduction);
+        float reducedCooldown = skill.Cooldown * (1f - cooldownReduction / 100f);
         reducedCooldown = Mathf.Max(0.1f, reducedCooldown); // 최소 0.1초
 
         _cooldownEndTimes[skill.SkillName] = Time.time + reducedCooldown;
@@ -78,7 +77,7 @@ public class PlayerSkillCooldown : NetworkBehaviour
 
     private void Update()
     {
-        if (!isServer) return;
+        if (netIdentity == null || !isServer) return;
 
         // 쿨다운 종료 체크
         var expiredSkills = new List<string>();

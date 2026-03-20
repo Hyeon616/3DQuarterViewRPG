@@ -58,9 +58,18 @@ public class PlayerStatAllocation : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
+        AutoAssignFields();
         InitializeAllocation();
         _availablePoints = initialPoints;
         _totalPoints = initialPoints; // 총 포인트 고정
+    }
+
+    private void AutoAssignFields()
+    {
+        if (statTree == null)
+        {
+            statTree = PlayerDefaultSettings.Instance?.DefaultStatTree;
+        }
     }
 
     public override void OnStartClient()
@@ -241,6 +250,7 @@ public class PlayerStatAllocation : NetworkBehaviour
         _allocatedPoints[flatIndex]++;
         _availablePoints -= cost;
         RecalculateTierPoints();
+        OnAllocationChanged?.Invoke();
     }
 
     [Command]
@@ -255,6 +265,7 @@ public class PlayerStatAllocation : NetworkBehaviour
         _allocatedPoints[flatIndex]--;
         _availablePoints += cost;
         RecalculateTierPoints();
+        OnAllocationChanged?.Invoke();
     }
 
     [Server]
@@ -262,6 +273,30 @@ public class PlayerStatAllocation : NetworkBehaviour
     {
         _availablePoints += points;
         _totalPoints += points;
+    }
+
+    /// <summary>
+    /// 서버: 저장 데이터에서 직접 할당 설정 (검증 없음)
+    /// </summary>
+    [Server]
+    public void ServerSetAllocation(int tierIndex, int nodeIndex, int points)
+    {
+        int flatIndex = GetFlatIndex(tierIndex, nodeIndex);
+        if (flatIndex < 0 || flatIndex >= _allocatedPoints.Count) return;
+
+        _allocatedPoints[flatIndex] = points;
+        RecalculateTierPoints();
+    }
+
+    /// <summary>
+    /// 서버: 저장 데이터에서 포인트 직접 설정
+    /// </summary>
+    [Server]
+    public void ServerSetPoints(int available, int total)
+    {
+        _availablePoints = available;
+        _totalPoints = total;
+        OnAllocationChanged?.Invoke();
     }
 
     private int GetFlatIndex(int tierIndex, int nodeIndex)

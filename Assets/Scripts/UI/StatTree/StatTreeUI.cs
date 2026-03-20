@@ -15,10 +15,9 @@ public class StatTreeUI : MonoBehaviour
     [SerializeField] private Button closeButton;
 
     [Header("Pre-built Mode")]
-    [Tooltip("체크하면 tiersContainer의 자식들을 사용 (에디터에서 미리 빌드)")]
     [SerializeField] private bool usePrebuiltUI = true;
 
-    [Header("Runtime Mode (usePrebuiltUI = false)")]
+    [Header("Runtime Mode")]
     [SerializeField] private StatTierUI tierPrefab;
     [SerializeField] private StatNodeUI nodePrefab;
 
@@ -28,12 +27,21 @@ public class StatTreeUI : MonoBehaviour
     private PlayerStatAllocation _allocation;
     private List<StatTierUI> _tierUIs = new List<StatTierUI>();
     private bool _isOpen;
+    private Canvas _canvas;
 
     public event Action<bool> OnUIToggled;
 
+    private void Awake()
+    {
+        _canvas = GetComponent<Canvas>();
+        if (_canvas != null && _canvas.renderMode == RenderMode.ScreenSpaceCamera && _canvas.worldCamera == null)
+        {
+            _canvas.worldCamera = Camera.main;
+        }
+    }
+
     public void Initialize(PlayerStatAllocation allocation)
     {
-        // 기존 구독 해제 (재초기화 시 중복 방지)
         if (_allocation != null)
         {
             _allocation.OnAllocationChanged -= UpdateDisplay;
@@ -78,12 +86,10 @@ public class StatTreeUI : MonoBehaviour
 
         if (usePrebuiltUI)
         {
-            // 미리 빌드된 UI 사용 - 기존 자식들을 찾아서 Initialize만 호출
             BuildPrebuiltUI(statTree);
         }
         else
         {
-            // 런타임 생성 모드
             BuildRuntimeUI(statTree);
         }
 
@@ -92,7 +98,6 @@ public class StatTreeUI : MonoBehaviour
 
     private void BuildPrebuiltUI(StatTreeData statTree)
     {
-        // tiersContainer의 자식 StatTierUI들을 수집
         for (int i = 0; i < tiersContainer.childCount && i < statTree.TierCount; i++)
         {
             var tierUI = tiersContainer.GetChild(i).GetComponent<StatTierUI>();
@@ -108,7 +113,6 @@ public class StatTreeUI : MonoBehaviour
 
     private void BuildRuntimeUI(StatTreeData statTree)
     {
-        // 기존 동적 생성 로직
         foreach (Transform child in tiersContainer)
         {
             Destroy(child.gameObject);
@@ -159,6 +163,9 @@ public class StatTreeUI : MonoBehaviour
 
     public void Close()
     {
+        if (nodeTooltip != null)
+            nodeTooltip.Hide();
+
         if (panel != null)
             panel.SetActive(false);
         _isOpen = false;

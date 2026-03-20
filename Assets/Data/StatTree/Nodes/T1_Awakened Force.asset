@@ -17,6 +17,6 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: 68fbc081a1ae37c4b8bd585c5b4484f2, type: 3}
   modifiersPerPoint:
   - statType: 2
-    value: 0.03
+    value: 3
   maxPoints: 30
   costPerPoint: 1

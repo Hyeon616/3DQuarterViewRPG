@@ -50,7 +50,6 @@ public class StatTreeUIConnector : NetworkBehaviour
 
     private void OnStatTreeToggled(bool isOpen)
     {
-        // UI 열리면 Player 입력 비활성화
         _player?.SetPlayerInputEnabled(!isOpen);
     }
 }

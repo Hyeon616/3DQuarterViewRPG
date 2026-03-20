@@ -7,6 +7,10 @@ public class StatTreeSettings : ScriptableObject
     [SerializeField] private Sprite leftInfoBackgroundSprite;
     [SerializeField] private Sprite lockIconSprite;
 
+    [Header("Glow Effect")]
+    [SerializeField] private Sprite glowSprite;
+
     public Sprite LeftInfoBackgroundSprite => leftInfoBackgroundSprite;
     public Sprite LockIconSprite => lockIconSprite;
+    public Sprite GlowSprite => glowSprite;
 }

@@ -19,13 +19,6 @@ public class DamageTextManager : MonoBehaviour
     [SerializeField] private string backAttackText = "백어택";
     [SerializeField] private string headAttackText = "헤드어택";
 
-    private DamageResolver _resolver;
-
-    private void Awake()
-    {
-        _resolver = new DamageResolver(backAttackText, headAttackText);
-    }
-
     public void Spawn(DamageEventData data)
     {
         if (canvas == null || prefab == null) return;
@@ -34,11 +27,31 @@ public class DamageTextManager : MonoBehaviour
         var text = Instantiate(prefab, canvas.transform);
         text.Initialize(data.Damage, data.Position, color, data.IsCritical);
 
-        if (_resolver.IsBonusHit(data.AttackType, data.HitDirection))
+        if (IsBonusHit(data.AttackType, data.HitDirection))
         {
-            string bonus = _resolver.GetBonusText(data.HitDirection);
+            string bonus = GetBonusText(data.HitDirection);
             text.SetBonus(bonus, bonusColor);
         }
+    }
+
+    private bool IsBonusHit(AttackType attackType, HitDirection hitDirection)
+    {
+        return attackType switch
+        {
+            AttackType.Back => hitDirection == HitDirection.Back,
+            AttackType.Head => hitDirection == HitDirection.Head,
+            _ => false
+        };
+    }
+
+    private string GetBonusText(HitDirection hitDirection)
+    {
+        return hitDirection switch
+        {
+            HitDirection.Back => backAttackText,
+            HitDirection.Head => headAttackText,
+            _ => ""
+        };
     }
 
     private Color GetColor(DamageType type, bool isCritical)
