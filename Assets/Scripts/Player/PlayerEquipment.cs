@@ -4,59 +4,47 @@ using System;
 
 /// <summary>
 /// 플레이어 장비 관리
-/// 장비 ID를 네트워크 동기화하고, 변경 시 스탯 재계산
+/// ItemDatabase의 장비 아이템 ID를 네트워크 동기화
 /// </summary>
 [RequireComponent(typeof(PlayerController))]
 public class PlayerEquipment : NetworkBehaviour
 {
     [Header("기본 장비 (테스트용)")]
-    [SerializeField] private WeaponData defaultWeapon;
-    [SerializeField] private ArmorData defaultArmor;
+    [SerializeField] private int defaultWeaponItemId = -1;
+    [SerializeField] private int defaultArmorItemId = -1;
 
-    // -1 = 장비 없음
+    // -1 = 장비 없음 (ItemDatabase의 ID)
     [SyncVar(hook = nameof(OnWeaponChanged))]
-    private int _weaponId = -1;
+    private int _weaponItemId = -1;
 
     [SyncVar(hook = nameof(OnArmorChanged))]
-    private int _armorId = -1;
+    private int _armorItemId = -1;
 
-    private WeaponData _cachedWeapon;
-    private ArmorData _cachedArmor;
+    private EquipmentItemData _cachedWeapon;
+    private EquipmentItemData _cachedArmor;
 
-    public WeaponData CurrentWeapon => _cachedWeapon;
-    public ArmorData CurrentArmor => _cachedArmor;
+    public EquipmentItemData CurrentWeapon => _cachedWeapon;
+    public EquipmentItemData CurrentArmor => _cachedArmor;
+    public int CurrentWeaponItemId => _weaponItemId;
+    public int CurrentArmorItemId => _armorItemId;
 
     public event Action OnEquipmentChanged;
 
     public override void OnStartServer()
     {
         base.OnStartServer();
-        AutoAssignDefaults();
 
         // 기본 장비 설정
-        if (defaultWeapon != null)
+        if (defaultWeaponItemId >= 0)
         {
-            int id = EquipmentDatabase.Instance?.GetWeaponId(defaultWeapon) ?? -1;
-            if (id >= 0) _weaponId = id;
+            _weaponItemId = defaultWeaponItemId;
         }
-        if (defaultArmor != null)
+        if (defaultArmorItemId >= 0)
         {
-            int id = EquipmentDatabase.Instance?.GetArmorId(defaultArmor) ?? -1;
-            if (id >= 0) _armorId = id;
+            _armorItemId = defaultArmorItemId;
         }
 
         CacheEquipment();
-    }
-
-    private void AutoAssignDefaults()
-    {
-        var defaults = PlayerDefaultSettings.Instance;
-        if (defaults == null) return;
-
-        if (defaultWeapon == null)
-            defaultWeapon = defaults.DefaultWeapon;
-        if (defaultArmor == null)
-            defaultArmor = defaults.DefaultArmor;
     }
 
     public override void OnStartClient()
@@ -79,53 +67,76 @@ public class PlayerEquipment : NetworkBehaviour
 
     private void CacheEquipment()
     {
-        var db = EquipmentDatabase.Instance;
-        if (db == null) return;
+        var itemDb = ItemDatabase.Instance;
+        if (itemDb == null) return;
 
-        _cachedWeapon = db.GetWeapon(_weaponId);
-        _cachedArmor = db.GetArmor(_armorId);
+        // 무기 캐싱
+        if (_weaponItemId >= 0)
+        {
+            var item = itemDb.GetItem(_weaponItemId);
+            if (item is EquipmentItemData equipItem && equipItem.EquipmentType == EquipmentType.Weapon)
+            {
+                _cachedWeapon = equipItem;
+            }
+            else
+            {
+                _cachedWeapon = null;
+            }
+        }
+        else
+        {
+            _cachedWeapon = null;
+        }
+
+        // 방어구 캐싱
+        if (_armorItemId >= 0)
+        {
+            var item = itemDb.GetItem(_armorItemId);
+            if (item is EquipmentItemData equipItem && equipItem.EquipmentType == EquipmentType.Armor)
+            {
+                _cachedArmor = equipItem;
+            }
+            else
+            {
+                _cachedArmor = null;
+            }
+        }
+        else
+        {
+            _cachedArmor = null;
+        }
     }
 
     /// <summary>
-    /// 무기 장착 (서버 호출)
+    /// 무기 장착 by ItemDatabase ID (서버 호출)
     /// </summary>
     [Server]
-    public void EquipWeapon(WeaponData weapon)
+    public void EquipWeaponByItemId(int itemId)
     {
-        int id = EquipmentDatabase.Instance?.GetWeaponId(weapon) ?? -1;
-        EquipWeaponById(id);
+        // 유효성 검사
+        var item = ItemDatabase.Instance?.GetItem(itemId);
+        if (item is EquipmentItemData equipItem && equipItem.EquipmentType == EquipmentType.Weapon)
+        {
+            _weaponItemId = itemId;
+            CacheEquipment();
+            OnEquipmentChanged?.Invoke();
+        }
     }
 
     /// <summary>
-    /// 무기 장착 by ID (서버 호출)
+    /// 방어구 장착 by ItemDatabase ID (서버 호출)
     /// </summary>
     [Server]
-    public void EquipWeaponById(int weaponId)
+    public void EquipArmorByItemId(int itemId)
     {
-        _weaponId = weaponId;
-        CacheEquipment();
-        OnEquipmentChanged?.Invoke();
-    }
-
-    /// <summary>
-    /// 방어구 장착 (서버 호출)
-    /// </summary>
-    [Server]
-    public void EquipArmor(ArmorData armor)
-    {
-        int id = EquipmentDatabase.Instance?.GetArmorId(armor) ?? -1;
-        EquipArmorById(id);
-    }
-
-    /// <summary>
-    /// 방어구 장착 by ID (서버 호출)
-    /// </summary>
-    [Server]
-    public void EquipArmorById(int armorId)
-    {
-        _armorId = armorId;
-        CacheEquipment();
-        OnEquipmentChanged?.Invoke();
+        // 유효성 검사
+        var item = ItemDatabase.Instance?.GetItem(itemId);
+        if (item is EquipmentItemData equipItem && equipItem.EquipmentType == EquipmentType.Armor)
+        {
+            _armorItemId = itemId;
+            CacheEquipment();
+            OnEquipmentChanged?.Invoke();
+        }
     }
 
     /// <summary>
@@ -134,7 +145,7 @@ public class PlayerEquipment : NetworkBehaviour
     [Server]
     public void UnequipWeapon()
     {
-        _weaponId = -1;
+        _weaponItemId = -1;
         CacheEquipment();
         OnEquipmentChanged?.Invoke();
     }
@@ -145,7 +156,7 @@ public class PlayerEquipment : NetworkBehaviour
     [Server]
     public void UnequipArmor()
     {
-        _armorId = -1;
+        _armorItemId = -1;
         CacheEquipment();
         OnEquipmentChanged?.Invoke();
     }
@@ -154,25 +165,100 @@ public class PlayerEquipment : NetworkBehaviour
     /// 클라이언트에서 무기 장착 요청
     /// </summary>
     [Command]
-    public void CmdEquipWeapon(int weaponId)
+    public void CmdEquipWeapon(int itemId)
     {
-        // 유효성 검사 (레벨 체크 등 추가 가능)
-        var weapon = EquipmentDatabase.Instance?.GetWeapon(weaponId);
-        if (weapon == null) return;
-
-        EquipWeaponById(weaponId);
+        EquipWeaponByItemId(itemId);
     }
 
     /// <summary>
     /// 클라이언트에서 방어구 장착 요청
     /// </summary>
     [Command]
-    public void CmdEquipArmor(int armorId)
+    public void CmdEquipArmor(int itemId)
     {
-        var armor = EquipmentDatabase.Instance?.GetArmor(armorId);
-        if (armor == null) return;
+        EquipArmorByItemId(itemId);
+    }
 
-        EquipArmorById(armorId);
+    /// <summary>
+    /// 클라이언트에서 무기 해제 요청
+    /// </summary>
+    [Command]
+    public void CmdUnequipWeapon()
+    {
+        ServerUnequipWeaponToInventory();
+    }
+
+    /// <summary>
+    /// 클라이언트에서 방어구 해제 요청
+    /// </summary>
+    [Command]
+    public void CmdUnequipArmor()
+    {
+        ServerUnequipArmorToInventory();
+    }
+
+    /// <summary>
+    /// 무기 해제 및 인벤토리 반환 (서버)
+    /// </summary>
+    [Server]
+    private void ServerUnequipWeaponToInventory()
+    {
+        if (_weaponItemId < 0) return;
+
+        var inventory = GetComponent<PlayerInventory>();
+        if (inventory != null)
+        {
+            // 인벤토리에 공간 체크
+            int emptySlot = inventory.FindEmptySlot();
+            if (emptySlot < 0)
+            {
+                Debug.LogWarning("[PlayerEquipment] No inventory space to unequip weapon");
+                return;
+            }
+
+            // 인벤토리에 추가
+            inventory.ServerAddItem(_weaponItemId, 1);
+
+            // 장비 해제
+            UnequipWeapon();
+        }
+        else
+        {
+            // 인벤토리 없으면 그냥 해제
+            UnequipWeapon();
+        }
+    }
+
+    /// <summary>
+    /// 방어구 해제 및 인벤토리 반환 (서버)
+    /// </summary>
+    [Server]
+    private void ServerUnequipArmorToInventory()
+    {
+        if (_armorItemId < 0) return;
+
+        var inventory = GetComponent<PlayerInventory>();
+        if (inventory != null)
+        {
+            // 인벤토리에 공간 체크
+            int emptySlot = inventory.FindEmptySlot();
+            if (emptySlot < 0)
+            {
+                Debug.LogWarning("[PlayerEquipment] No inventory space to unequip armor");
+                return;
+            }
+
+            // 인벤토리에 추가
+            inventory.ServerAddItem(_armorItemId, 1);
+
+            // 장비 해제
+            UnequipArmor();
+        }
+        else
+        {
+            // 인벤토리 없으면 그냥 해제
+            UnequipArmor();
+        }
     }
 
     #region Stat Getters
@@ -182,7 +268,7 @@ public class PlayerEquipment : NetworkBehaviour
     /// </summary>
     public float GetAttack(int level)
     {
-        return _cachedWeapon != null ? _cachedWeapon.GetAttack(level) : 0f;
+        return _cachedWeapon != null ? _cachedWeapon.GetAttack(level) : 10f;
     }
 
     /// <summary>
@@ -198,15 +284,16 @@ public class PlayerEquipment : NetworkBehaviour
     /// </summary>
     public float GetCriticalChance()
     {
-        return _cachedWeapon != null ? _cachedWeapon.GetCriticalChance() : 0f;
+        return _cachedWeapon != null ? _cachedWeapon.GetCriticalChance() : 5f;
     }
 
     /// <summary>
     /// 현재 무기의 치명타 데미지
+    /// 반환: 배율 (2.0 = 100% 추가 = 2배 데미지)
     /// </summary>
     public float GetCriticalDamage()
     {
-        return _cachedWeapon != null ? _cachedWeapon.GetCriticalDamage() : 1f;
+        return _cachedWeapon != null ? _cachedWeapon.GetCriticalDamage() : 2.0f;
     }
 
     /// <summary>
@@ -214,7 +301,7 @@ public class PlayerEquipment : NetworkBehaviour
     /// </summary>
     public float GetHp(int level)
     {
-        return _cachedArmor != null ? _cachedArmor.GetHp(level) : 0f;
+        return _cachedArmor != null ? _cachedArmor.GetHp(level) : 100f;
     }
 
     /// <summary>

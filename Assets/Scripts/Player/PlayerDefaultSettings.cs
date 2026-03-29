@@ -20,14 +20,8 @@ public class PlayerDefaultSettings : ScriptableObject
         }
     }
 
-    [Header("Equipment")]
-    [SerializeField] private WeaponData defaultWeapon;
-    [SerializeField] private ArmorData defaultArmor;
-
     [Header("Stat Tree")]
     [SerializeField] private StatTreeData defaultStatTree;
 
-    public WeaponData DefaultWeapon => defaultWeapon;
-    public ArmorData DefaultArmor => defaultArmor;
     public StatTreeData DefaultStatTree => defaultStatTree;
 }

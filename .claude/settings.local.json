@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "mcp__ide__getDiagnostics",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(find:*)",
+      "Bash(dir \"C:\\\\Users\\\\JHW\\\\Documents\\\\3DQuarterViewRPG\\\\Assets\\\\Data\\\\Equipment\")"
     ]
   }
 }

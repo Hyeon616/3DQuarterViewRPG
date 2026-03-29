@@ -42,7 +42,12 @@ public class DamageCalculator
     {
         if (_sorted) return;
 
-        _modifiers.Sort((a, b) => a.Priority.CompareTo(b.Priority));
+        _modifiers.Sort(ComparePriority);
         _sorted = true;
+    }
+
+    private int ComparePriority(IDamageModifier modifierA, IDamageModifier modifierB)
+    {
+        return modifierA.Priority.CompareTo(modifierB.Priority);
     }
 }

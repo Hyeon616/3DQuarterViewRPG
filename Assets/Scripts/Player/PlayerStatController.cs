@@ -40,6 +40,11 @@ public class PlayerStatController : NetworkBehaviour, IPlayerStat
     public int Level => _level;
     public PlayerEquipment Equipment => _equipment;
 
+    /// <summary>
+    /// 스탯이 변경되었을 때 발생하는 이벤트
+    /// </summary>
+    public event System.Action OnStatsChanged;
+
     public override void OnStartServer()
     {
         base.OnStartServer();
@@ -135,7 +140,7 @@ public class PlayerStatController : NetworkBehaviour, IPlayerStat
             _attack = 10f;
             _defense = 0f;
             _criticalChance = 0.05f;
-            _criticalDamage = 1.5f;
+            _criticalDamage = 100f; // 100% 추가 = 2배 데미지
             _attackSpeed = 1f;
         }
 
@@ -150,6 +155,9 @@ public class PlayerStatController : NetworkBehaviour, IPlayerStat
             var modifiers = _allocation.GetTotalModifiers();
             ApplyModifiers(modifiers);
         }
+
+        // 스탯 변경 이벤트 발생
+        OnStatsChanged?.Invoke();
     }
 
     private void ApplyModifiers(Dictionary<StatType, float> modifiers)

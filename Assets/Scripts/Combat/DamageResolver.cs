@@ -18,6 +18,7 @@ public class DamageResolver
         _calculator.RegisterModifier(new DamageIncreaseModifier());
         _calculator.RegisterModifier(new CriticalDamageModifier());
         _calculator.RegisterModifier(new HitBonusModifier());
+        _calculator.RegisterModifier(new RandomVarianceModifier());
     }
 
     public float CalculateDamage(DamageContext context)

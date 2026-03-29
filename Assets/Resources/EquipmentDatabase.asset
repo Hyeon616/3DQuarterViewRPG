@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea55c69a384542b4ba672b4b9d7fc2e5, type: 3}
+  m_Name: EquipmentDatabase
+  m_EditorClassIdentifier: 
+  weaponTypes:
+  - {fileID: 11400000, guid: 4ee6519937314974eba4f1c7543f25fb, type: 2}
+  - {fileID: 11400000, guid: 1b56b6fade1efe24c830c1cff9ddbf59, type: 2}
+  - {fileID: 11400000, guid: 694f4e54e672428419c7f06b9cb1b66d, type: 2}
+  - {fileID: 11400000, guid: f1ed33190b4aca342b61fd00a42f5601, type: 2}
+  - {fileID: 11400000, guid: 7853bc110193ea349b21c50b9b7dff48, type: 2}
+  - {fileID: 11400000, guid: 4dfe8f1e2da79be4db0a2e44773d413d, type: 2}
+  armorTypes:
+  - {fileID: 11400000, guid: 8cd92128e2a45e442b5667a41d778fc0, type: 2}
+  - {fileID: 11400000, guid: 5aa6f5dcebaa0274fa6e1f309126c5fd, type: 2}
+  - {fileID: 11400000, guid: 6fccbf0cc89bad84d9b7526a4d714413, type: 2}
+  - {fileID: 11400000, guid: d444f13684a79c943833b6b2f013115b, type: 2}
+  - {fileID: 11400000, guid: a3b71081fae046d48a0a48743bff8218, type: 2}

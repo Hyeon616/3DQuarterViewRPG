@@ -21,6 +21,7 @@ public class PlayerDataController : NetworkBehaviour
     private PlayerEquipment _equipment;
     private PlayerStatAllocation _statAllocation;
     private PlayerStatController _statController;
+    private PlayerInventory _inventory;
 
     public PlayerSaveData SaveData => _saveData;
     public bool IsDirty => _isDirty;
@@ -44,6 +45,8 @@ public class PlayerDataController : NetworkBehaviour
             _equipment.OnEquipmentChanged += OnEquipmentChanged;
         if (_statAllocation != null)
             _statAllocation.OnAllocationChanged += OnAllocationChanged;
+        if (_inventory != null)
+            _inventory.OnInventoryChanged += OnInventoryChanged;
 
         // 로컬 플레이어만 저장 데이터 로드
         Load();
@@ -58,6 +61,8 @@ public class PlayerDataController : NetworkBehaviour
             _equipment.OnEquipmentChanged -= OnEquipmentChanged;
         if (_statAllocation != null)
             _statAllocation.OnAllocationChanged -= OnAllocationChanged;
+        if (_inventory != null)
+            _inventory.OnInventoryChanged -= OnInventoryChanged;
 
         // 종료 전 저장
         if (_isDirty)
@@ -74,11 +79,17 @@ public class PlayerDataController : NetworkBehaviour
         MarkDirty();
     }
 
+    private void OnInventoryChanged()
+    {
+        MarkDirty();
+    }
+
     private void CacheComponents()
     {
         _equipment = GetComponent<PlayerEquipment>();
         _statAllocation = GetComponent<PlayerStatAllocation>();
         _statController = GetComponent<PlayerStatController>();
+        _inventory = GetComponent<PlayerInventory>();
     }
 
     private void Update()
@@ -129,18 +140,19 @@ public class PlayerDataController : NetworkBehaviour
         // 서버에 로드된 데이터 적용 요청
         CmdApplyLoadedData(
             _saveData.level,
-            _saveData.equippedWeaponId,
-            _saveData.equippedArmorId,
+            _saveData.equippedWeaponId,  // ItemDatabase ID
+            _saveData.equippedArmorId,   // ItemDatabase ID
             _saveData.availableStatPoints,
             _saveData.totalStatPoints,
-            SerializeStatAllocations()
+            SerializeStatAllocations(),
+            SerializeInventory()
         );
 
         OnDataLoaded?.Invoke(_saveData);
         _isDirty = false;
         _lastSaveTime = Time.time;
 
-        Debug.Log($"[PlayerData] Loaded - Level: {_saveData.level}, Weapon: {_saveData.equippedWeaponId}, Armor: {_saveData.equippedArmorId}");
+        Debug.Log($"[PlayerData] Loaded - Level: {_saveData.level}, WeaponItemId: {_saveData.equippedWeaponId}, ArmorItemId: {_saveData.equippedArmorId}");
     }
 
     /// <summary>
@@ -176,19 +188,18 @@ public class PlayerDataController : NetworkBehaviour
             _saveData.level = _statController.Level;
         }
 
-        // 장비
+        // 장비 (ItemDatabase ID)
         if (_equipment != null)
         {
-            _saveData.equippedWeaponId = _equipment.CurrentWeapon != null
-                ? EquipmentDatabase.Instance?.GetWeaponId(_equipment.CurrentWeapon) ?? -1
-                : -1;
-            _saveData.equippedArmorId = _equipment.CurrentArmor != null
-                ? EquipmentDatabase.Instance?.GetArmorId(_equipment.CurrentArmor) ?? -1
-                : -1;
+            _saveData.equippedWeaponId = _equipment.CurrentWeaponItemId;
+            _saveData.equippedArmorId = _equipment.CurrentArmorItemId;
         }
 
         // StatTree 할당
         CollectStatAllocations();
+
+        // 인벤토리
+        CollectInventory();
     }
 
     private void CollectStatAllocations()
@@ -229,7 +240,7 @@ public class PlayerDataController : NetworkBehaviour
     #region Network Commands
 
     [Command]
-    private void CmdApplyLoadedData(int level, int weaponId, int armorId, int availablePoints, int totalPoints, byte[] statAllocations)
+    private void CmdApplyLoadedData(int level, int weaponItemId, int armorItemId, int availablePoints, int totalPoints, byte[] statAllocations, byte[] inventoryData)
     {
         // 레벨 적용
         if (_statController != null)
@@ -237,17 +248,20 @@ public class PlayerDataController : NetworkBehaviour
             _statController.SetLevel(level);
         }
 
-        // 장비 적용
+        // 장비 적용 (ItemDatabase ID)
         if (_equipment != null)
         {
-            if (weaponId >= 0)
-                _equipment.EquipWeaponById(weaponId);
-            if (armorId >= 0)
-                _equipment.EquipArmorById(armorId);
+            if (weaponItemId >= 0)
+                _equipment.EquipWeaponByItemId(weaponItemId);
+            if (armorItemId >= 0)
+                _equipment.EquipArmorByItemId(armorItemId);
         }
 
         // StatTree 적용
         ApplyStatAllocations(availablePoints, totalPoints, statAllocations);
+
+        // 인벤토리 적용
+        ApplyInventory(inventoryData);
     }
 
     [Server]
@@ -266,6 +280,18 @@ public class PlayerDataController : NetworkBehaviour
         }
 
         _statAllocation.ServerSetPoints(availablePoints, totalPoints);
+    }
+
+    [Server]
+    private void ApplyInventory(byte[] data)
+    {
+        if (_inventory == null) return;
+
+        var entries = DeserializeInventory(data);
+        foreach (var entry in entries)
+        {
+            _inventory.ServerAddItem(entry.itemId, entry.quantity);
+        }
     }
 
     #endregion
@@ -307,6 +333,60 @@ public class PlayerDataController : NetworkBehaviour
             int nodeIndex = BitConverter.ToInt32(data, offset + 4);
             int points = BitConverter.ToInt32(data, offset + 8);
             result[i] = new StatAllocationEntry(tierIndex, nodeIndex, points);
+        }
+
+        return result;
+    }
+
+    private void CollectInventory()
+    {
+        if (_inventory == null || _saveData == null) return;
+
+        _saveData.inventory.Clear();
+        for (int i = 0; i < _inventory.Slots.Count; i++)
+        {
+            var slot = _inventory.GetSlot(i);
+            if (!slot.IsEmpty)
+            {
+                _saveData.inventory.Add(new InventoryItemEntry(slot.itemId, slot.quantity, i));
+            }
+        }
+    }
+
+    private byte[] SerializeInventory()
+    {
+        if (_saveData == null || _saveData.inventory == null)
+            return new byte[0];
+
+        var list = _saveData.inventory;
+        byte[] data = new byte[list.Count * 12]; // 3 ints * 4 bytes
+
+        for (int i = 0; i < list.Count; i++)
+        {
+            int offset = i * 12;
+            Buffer.BlockCopy(BitConverter.GetBytes(list[i].itemId), 0, data, offset, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(list[i].quantity), 0, data, offset + 4, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(list[i].slotIndex), 0, data, offset + 8, 4);
+        }
+
+        return data;
+    }
+
+    private InventoryItemEntry[] DeserializeInventory(byte[] data)
+    {
+        if (data == null || data.Length == 0)
+            return new InventoryItemEntry[0];
+
+        int count = data.Length / 12;
+        var result = new InventoryItemEntry[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            int offset = i * 12;
+            int itemId = BitConverter.ToInt32(data, offset);
+            int quantity = BitConverter.ToInt32(data, offset + 4);
+            int slotIndex = BitConverter.ToInt32(data, offset + 8);
+            result[i] = new InventoryItemEntry(itemId, quantity, slotIndex);
         }
 
         return result;

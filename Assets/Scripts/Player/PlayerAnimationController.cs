@@ -244,8 +244,8 @@ public class PlayerAnimationController : NetworkBehaviour, IAttackState
 
         string skillAnim = BaseAnimationData.GetAttackName(_currentComboIndex);
 
-        float attackSpeedBonus = _player.PlayerStat?.AttackSpeed ?? 0f;
-        float speedMultiplier = 1f + attackSpeedBonus / 100f;
+        // AttackSpeed는 이미 배수 형태 (1.0 = 기본, 1.2 = 20% 빠름)
+        float speedMultiplier = _player.PlayerStat?.AttackSpeed ?? 1f;
 
         _currentAnimation = skillAnim;
         _isUsingSkill = true;
