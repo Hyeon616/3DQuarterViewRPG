@@ -25,6 +25,12 @@ public class InventoryUI : MonoBehaviour
     private PlayerInventory _inventory;
     private List<InventoryItemSlotUI> _slotUIList = new List<InventoryItemSlotUI>();
     private bool _isInitialized = false;
+    private Canvas _canvas;
+
+    // 드래그 고스트 (동적 생성)
+    private GameObject _dragGhostObject;
+    private Image _dragGhostImage;
+    private TMP_Text _dragGhostQuantity;
 
     public bool IsOpen => panel != null && panel.activeSelf;
 
@@ -38,8 +44,8 @@ public class InventoryUI : MonoBehaviour
         if (closeButton != null)
             closeButton.onClick.AddListener(Close);
 
-        // panel.SetActive(false)는 여기서 하지 않음
-        // 이미 비활성화 상태로 생성되며, 첫 Open 시 Awake가 호출되어 다시 닫히는 문제 방지
+        // Canvas 참조 (드래그 고스트 부모용)
+        _canvas = GetComponentInParent<Canvas>();
     }
 
     /// <summary>
@@ -75,6 +81,9 @@ public class InventoryUI : MonoBehaviour
 
         if (closeButton != null)
             closeButton.onClick.RemoveListener(Close);
+
+        // 드래그 고스트 정리
+        DestroyDragGhost();
     }
 
     /// <summary>
@@ -152,6 +161,112 @@ public class InventoryUI : MonoBehaviour
     {
         if (tooltip != null)
             tooltip.Hide();
+    }
+
+    #endregion
+
+    #region Drag Ghost
+
+    /// <summary>
+    /// 드래그 오브젝트 생성
+    /// </summary>
+    private void CreateDragGhostImage(RectTransform sourceSlot)
+    {
+        if (_dragGhostObject != null || _canvas == null) return;
+
+        // 고스트 오브젝트 생성
+        _dragGhostObject = new GameObject("DragGhost");
+        _dragGhostObject.transform.SetParent(_canvas.transform, false);
+
+        // RectTransform 설정
+        var rectTransform = _dragGhostObject.AddComponent<RectTransform>();
+        rectTransform.sizeDelta = sourceSlot.sizeDelta;
+
+        // 이미지 설정
+        _dragGhostImage = _dragGhostObject.AddComponent<Image>();
+        _dragGhostImage.raycastTarget = false;
+
+        // 반투명 효과
+        var color = _dragGhostImage.color;
+        color.a = 0.8f;
+        _dragGhostImage.color = color;
+
+        // 수량 텍스트
+        var textObj = new GameObject("Quantity");
+        textObj.transform.SetParent(_dragGhostObject.transform, false);
+
+        var textRect = textObj.AddComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = Vector2.zero;
+        textRect.offsetMax = Vector2.zero;
+
+        _dragGhostQuantity = textObj.AddComponent<TextMeshProUGUI>();
+        _dragGhostQuantity.alignment = TextAlignmentOptions.TopRight;
+        _dragGhostQuantity.fontSize = 14;
+        _dragGhostQuantity.raycastTarget = false;
+
+        _dragGhostObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 드래그 고스트 이미지 표시
+    /// </summary>
+    public void ShowDragGhost(RectTransform sourceSlot, Sprite icon, int quantity, Vector2 position)
+    {
+        if (_canvas == null || sourceSlot == null) return;
+
+        // 고스트가 없으면 생성
+        CreateDragGhostImage(sourceSlot);
+
+        if (_dragGhostObject == null) return;
+
+        // 이미지 업데이트
+        _dragGhostImage.sprite = icon;
+
+        // 수량 업데이트
+        _dragGhostQuantity.text = quantity > 1 ? quantity.ToString() : "";
+
+        // 위치 및 활성화
+        _dragGhostObject.transform.position = position;
+        _dragGhostObject.transform.SetAsLastSibling();
+        _dragGhostObject.SetActive(true);
+    }
+
+    /// <summary>
+    /// 드래그 고스트 이미지 위치 업데이트
+    /// </summary>
+    public void UpdateDragGhost(Vector2 position)
+    {
+        if (_dragGhostObject != null && _dragGhostObject.activeSelf)
+        {
+            _dragGhostObject.transform.position = position;
+        }
+    }
+
+    /// <summary>
+    /// 드래그 고스트 이미지 비활성화
+    /// </summary>
+    public void HideDragGhost()
+    {
+        if (_dragGhostObject != null)
+        {
+            _dragGhostObject.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 드래그 고스트 오브젝트 파괴 (OnDestroy 시)
+    /// </summary>
+    private void DestroyDragGhost()
+    {
+        if (_dragGhostObject != null)
+        {
+            Destroy(_dragGhostObject);
+            _dragGhostObject = null;
+            _dragGhostImage = null;
+            _dragGhostQuantity = null;
+        }
     }
 
     #endregion

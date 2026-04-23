@@ -1,10 +1,11 @@
 using Mirror;
 using UnityEngine;
 using System;
+using Items;
 
 /// <summary>
 /// 플레이어 장비 관리
-/// ItemDatabase의 장비 아이템 ID를 네트워크 동기화
+/// ItemManager의 장비 아이템 ID를 네트워크 동기화
 /// </summary>
 [RequireComponent(typeof(PlayerController))]
 public class PlayerEquipment : NetworkBehaviour
@@ -13,18 +14,18 @@ public class PlayerEquipment : NetworkBehaviour
     [SerializeField] private int defaultWeaponItemId = -1;
     [SerializeField] private int defaultArmorItemId = -1;
 
-    // -1 = 장비 없음 (ItemDatabase의 ID)
+    // -1 = 장비 없음 (ItemManager의 인덱스)
     [SyncVar(hook = nameof(OnWeaponChanged))]
     private int _weaponItemId = -1;
 
     [SyncVar(hook = nameof(OnArmorChanged))]
     private int _armorItemId = -1;
 
-    private EquipmentItemData _cachedWeapon;
-    private EquipmentItemData _cachedArmor;
+    private EquipmentData _cachedWeapon;
+    private EquipmentData _cachedArmor;
 
-    public EquipmentItemData CurrentWeapon => _cachedWeapon;
-    public EquipmentItemData CurrentArmor => _cachedArmor;
+    public EquipmentData CurrentWeapon => _cachedWeapon;
+    public EquipmentData CurrentArmor => _cachedArmor;
     public int CurrentWeaponItemId => _weaponItemId;
     public int CurrentArmorItemId => _armorItemId;
 
@@ -67,14 +68,14 @@ public class PlayerEquipment : NetworkBehaviour
 
     private void CacheEquipment()
     {
-        var itemDb = ItemDatabase.Instance;
+        var itemDb = ItemManager.Instance;
         if (itemDb == null) return;
 
         // 무기 캐싱
         if (_weaponItemId >= 0)
         {
             var item = itemDb.GetItem(_weaponItemId);
-            if (item is EquipmentItemData equipItem && equipItem.EquipmentType == EquipmentType.Weapon)
+            if (item is EquipmentData equipItem && equipItem.EquipmentType == EquipmentType.Weapon)
             {
                 _cachedWeapon = equipItem;
             }
@@ -92,7 +93,7 @@ public class PlayerEquipment : NetworkBehaviour
         if (_armorItemId >= 0)
         {
             var item = itemDb.GetItem(_armorItemId);
-            if (item is EquipmentItemData equipItem && equipItem.EquipmentType == EquipmentType.Armor)
+            if (item is EquipmentData equipItem && equipItem.EquipmentType == EquipmentType.Armor)
             {
                 _cachedArmor = equipItem;
             }
@@ -114,8 +115,8 @@ public class PlayerEquipment : NetworkBehaviour
     public void EquipWeaponByItemId(int itemId)
     {
         // 유효성 검사
-        var item = ItemDatabase.Instance?.GetItem(itemId);
-        if (item is EquipmentItemData equipItem && equipItem.EquipmentType == EquipmentType.Weapon)
+        var item = ItemManager.Instance?.GetItem(itemId);
+        if (item is EquipmentData equipItem && equipItem.EquipmentType == EquipmentType.Weapon)
         {
             _weaponItemId = itemId;
             CacheEquipment();
@@ -130,8 +131,8 @@ public class PlayerEquipment : NetworkBehaviour
     public void EquipArmorByItemId(int itemId)
     {
         // 유효성 검사
-        var item = ItemDatabase.Instance?.GetItem(itemId);
-        if (item is EquipmentItemData equipItem && equipItem.EquipmentType == EquipmentType.Armor)
+        var item = ItemManager.Instance?.GetItem(itemId);
+        if (item is EquipmentData equipItem && equipItem.EquipmentType == EquipmentType.Armor)
         {
             _armorItemId = itemId;
             CacheEquipment();

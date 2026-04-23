@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
+using Items;
 
 /// <summary>
 /// 인벤토리 슬롯 UI (드래그앤드롭, 클릭, 툴팁)
@@ -33,7 +34,6 @@ public class InventoryItemSlotUI : MonoBehaviour,
 
     // 드래그 상태
     private static InventoryItemSlotUI _draggedSlot;
-    private Vector3 _originalPosition;
 
     public int SlotIndex => _slotIndex;
     public InventorySlot SlotData => _slotData;
@@ -83,7 +83,7 @@ public class InventoryItemSlotUI : MonoBehaviour,
         else
         {
             // 아이템 있음
-            var itemData = ItemDatabase.Instance?.GetItem(_slotData.itemId);
+            var itemData = ItemManager.Instance?.GetItem(_slotData.itemId);
             if (itemData != null)
             {
                 if (iconImage != null)
@@ -109,7 +109,7 @@ public class InventoryItemSlotUI : MonoBehaviour,
     {
         if (_inventory == null || _slotData.IsEmpty) return;
 
-        var itemData = ItemDatabase.Instance?.GetItem(_slotData.itemId);
+        var itemData = ItemManager.Instance?.GetItem(_slotData.itemId);
         if (itemData == null) return;
 
         // 우클릭: 사용 또는 장착
@@ -124,7 +124,7 @@ public class InventoryItemSlotUI : MonoBehaviour,
                 // 쿨다운 체크
                 if (_inventory.IsItemOnCooldown(_slotData.itemId))
                 {
-                    Debug.Log($"[InventorySlot] Item {itemData.ItemName} is on cooldown");
+                    Debug.Log($"[InventorySlot] Item {itemData.Name} is on cooldown");
                     return;
                 }
 
@@ -162,35 +162,47 @@ public class InventoryItemSlotUI : MonoBehaviour,
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (_slotData.IsEmpty || _inventory == null) return;
+        if (_slotData.IsEmpty || _inventory == null || _parentUI == null) return;
 
         _draggedSlot = this;
-        _originalPosition = transform.position;
 
-        // 드래그 시각 효과
+        // 드래그 고스트 이미지 표시 (현재 슬롯 크기 참조)
+        var itemData = ItemManager.Instance?.GetItem(_slotData.itemId);
+        if (itemData != null)
+        {
+            var rectTransform = GetComponent<RectTransform>();
+            _parentUI.ShowDragGhost(rectTransform, itemData.Icon, _slotData.quantity, eventData.position);
+        }
+
+        // 원본 슬롯 반투명 처리
         if (canvasGroup != null)
-            canvasGroup.alpha = 0.6f;
+        {
+            canvasGroup.alpha = 0.5f;
+        }
 
-        _parentUI?.HideTooltip();
+        _parentUI.HideTooltip();
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (_draggedSlot != this) return;
+        if (_draggedSlot != this || _parentUI == null) return;
 
-        // 마우스 따라다니기
-        transform.position = eventData.position;
+        // 드래그 고스트 이미지만 이동 (슬롯 자체는 이동하지 않음)
+        _parentUI.UpdateDragGhost(eventData.position);
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
         if (_draggedSlot != this) return;
 
-        // 원위치
-        transform.position = _originalPosition;
+        // 드래그 고스트 숨김
+        _parentUI?.HideDragGhost();
 
+        // 원본 슬롯 시각 효과 복원
         if (canvasGroup != null)
+        {
             canvasGroup.alpha = 1f;
+        }
 
         _draggedSlot = null;
     }

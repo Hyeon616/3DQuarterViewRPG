@@ -1,0 +1,84 @@
+{
+  "weaponTypes": [
+    {
+      "type": "TwoHandedSword",
+      "displayName": "양손검",
+      "attackMultiplier": 1.2,
+      "attackSpeedMultiplier": 0.8,
+      "criticalChanceMultiplier": 1.0,
+      "criticalDamageMultiplier": 1.0
+    },
+    {
+      "type": "SwordAndShield",
+      "displayName": "검과 방패",
+      "attackMultiplier": 1.0,
+      "attackSpeedMultiplier": 1.0,
+      "criticalChanceMultiplier": 1.0,
+      "criticalDamageMultiplier": 1.0
+    },
+    {
+      "type": "Spear",
+      "displayName": "창",
+      "attackMultiplier": 0.9,
+      "attackSpeedMultiplier": 1.2,
+      "criticalChanceMultiplier": 1.1,
+      "criticalDamageMultiplier": 1.0
+    },
+    {
+      "type": "Hammer",
+      "displayName": "해머",
+      "attackMultiplier": 1.5,
+      "attackSpeedMultiplier": 0.6,
+      "criticalChanceMultiplier": 0.8,
+      "criticalDamageMultiplier": 1.3
+    },
+    {
+      "type": "Gauntlet",
+      "displayName": "건틀릿",
+      "attackMultiplier": 0.7,
+      "attackSpeedMultiplier": 1.5,
+      "criticalChanceMultiplier": 1.2,
+      "criticalDamageMultiplier": 0.9
+    },
+    {
+      "type": "Bow",
+      "displayName": "활",
+      "attackMultiplier": 1.0,
+      "attackSpeedMultiplier": 1.0,
+      "criticalChanceMultiplier": 1.3,
+      "criticalDamageMultiplier": 1.1
+    }
+  ],
+  "armorTypes": [
+    {
+      "type": "Cloth",
+      "displayName": "천",
+      "hpMultiplier": 0.8,
+      "defenseMultiplier": 0.5
+    },
+    {
+      "type": "Leather",
+      "displayName": "가죽",
+      "hpMultiplier": 0.9,
+      "defenseMultiplier": 0.7
+    },
+    {
+      "type": "Light",
+      "displayName": "경갑",
+      "hpMultiplier": 1.0,
+      "defenseMultiplier": 1.0
+    },
+    {
+      "type": "Heavy",
+      "displayName": "중갑",
+      "hpMultiplier": 1.1,
+      "defenseMultiplier": 1.3
+    },
+    {
+      "type": "Plate",
+      "displayName": "판금",
+      "hpMultiplier": 1.2,
+      "defenseMultiplier": 1.5
+    }
+  ]
+}

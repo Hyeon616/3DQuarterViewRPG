@@ -2,6 +2,7 @@ using Mirror;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using Items;
 
 /// <summary>
 /// 플레이어 인벤토리 관리
@@ -119,7 +120,7 @@ public class PlayerInventory : NetworkBehaviour
     /// </summary>
     public int FindStackableSlot(int itemId)
     {
-        var itemData = ItemDatabase.Instance?.GetItem(itemId);
+        var itemData = ItemManager.Instance?.GetItem(itemId);
         if (itemData == null || !itemData.IsStackable) return -1;
 
         for (int i = 0; i < _slots.Count; i++)
@@ -200,7 +201,7 @@ public class PlayerInventory : NetworkBehaviour
     [Server]
     public void ServerAddItem(int itemId, int quantity)
     {
-        var itemData = ItemDatabase.Instance?.GetItem(itemId);
+        var itemData = ItemManager.Instance?.GetItem(itemId);
         if (itemData == null || quantity <= 0) return;
 
         int remaining = quantity;
@@ -279,7 +280,7 @@ public class PlayerInventory : NetworkBehaviour
         // 같은 아이템 스택
         if (from.itemId == to.itemId)
         {
-            var itemData = ItemDatabase.Instance?.GetItem(from.itemId);
+            var itemData = ItemManager.Instance?.GetItem(from.itemId);
             if (itemData != null && itemData.IsStackable)
             {
                 int totalQuantity = from.quantity + to.quantity;
@@ -312,11 +313,11 @@ public class PlayerInventory : NetworkBehaviour
         var slot = _slots[slotIndex];
         if (slot.IsEmpty) return;
 
-        var itemData = ItemDatabase.Instance?.GetItem(slot.itemId);
+        var itemData = ItemManager.Instance?.GetItem(slot.itemId);
         if (itemData == null || !itemData.IsUsable) return;
 
         // 쿨다운 체크 (서버 측)
-        if (itemData is ConsumableItemData consumable)
+        if (itemData is ConsumableData consumable)
         {
             // 아이템 효과 적용
             ApplyConsumableEffects(consumable);
@@ -340,10 +341,10 @@ public class PlayerInventory : NetworkBehaviour
         var slot = _slots[slotIndex];
         if (slot.IsEmpty) return;
 
-        var itemData = ItemDatabase.Instance?.GetItem(slot.itemId);
+        var itemData = ItemManager.Instance?.GetItem(slot.itemId);
         if (itemData == null || !itemData.IsEquippable) return;
 
-        var equipmentItem = itemData as EquipmentItemData;
+        var equipmentItem = itemData as EquipmentData;
         if (equipmentItem == null) return;
 
         var equipment = GetComponent<PlayerEquipment>();
@@ -378,29 +379,40 @@ public class PlayerInventory : NetworkBehaviour
     }
 
     [Server]
-    private void ApplyConsumableEffects(ConsumableItemData consumable)
+    private void ApplyConsumableEffects(ConsumableData consumable)
     {
-        // TODO: 실제 효과 적용 로직 (HP 회복 등)
-        // 현재는 플레이스홀더
+        var statController = GetComponent<PlayerStatController>();
+
         foreach (var effect in consumable.Effects)
         {
-            switch (effect.effectType)
+            switch (effect.EffectType)
             {
-                case ConsumableEffect.EffectType.RestoreHP:
-                    // HP 회복 로직
-                    Debug.Log($"[Inventory] Restore HP: {effect.value}");
+                case ConsumableEffectType.RestoreHP:
+                    // 고정값 HP 회복
+                    // TODO: 실제 HP 시스템 연동 필요
+                    Debug.Log($"[Inventory] Restore HP: {effect.Value}");
                     break;
-                case ConsumableEffect.EffectType.RestoreMana:
+                case ConsumableEffectType.RestoreHPPercent:
+                    // 최대 HP 퍼센트 회복
+                    if (statController != null)
+                    {
+                        float maxHp = statController.MaxHp;
+                        float healAmount = maxHp * (effect.Value / 100f);
+                        // TODO: 실제 HP 시스템 연동 필요
+                        Debug.Log($"[Inventory] Restore HP {effect.Value}% (MaxHP: {maxHp}): {healAmount}");
+                    }
+                    break;
+                case ConsumableEffectType.RestoreMana:
                     // 마나 회복 로직
-                    Debug.Log($"[Inventory] Restore Mana: {effect.value}");
+                    Debug.Log($"[Inventory] Restore Mana: {effect.Value}");
                     break;
-                case ConsumableEffect.EffectType.Buff:
+                case ConsumableEffectType.Buff:
                     // 버프 적용 로직
-                    Debug.Log($"[Inventory] Apply Buff: {effect.duration}s");
+                    Debug.Log($"[Inventory] Apply Buff: {effect.Duration}s");
                     break;
-                case ConsumableEffect.EffectType.Debuff:
+                case ConsumableEffectType.Debuff:
                     // 디버프 적용 로직
-                    Debug.Log($"[Inventory] Apply Debuff: {effect.duration}s");
+                    Debug.Log($"[Inventory] Apply Debuff: {effect.Duration}s");
                     break;
             }
         }

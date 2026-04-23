@@ -91,14 +91,14 @@ public class ClientNetworkUI : MonoBehaviour
         if (NetworkClient.isConnected)
         {
             _isConnecting = false;
-            if (_isHost)
-            {
-                textStatus.text = $"호스트 (Players: {NetworkServer.connections.Count})";
-            }
-            else
-            {
-                textStatus.text = $"연결됨 (ID: {NetworkClient.connection.connectionId})";
-            }
+            // if (_isHost)
+            // {
+            //     textStatus.text = $"호스트 (Players: {NetworkServer.connections.Count})";
+            // }
+            // else
+            // {
+            //     textStatus.text = $"연결됨 (ID: {NetworkClient.connection.connectionId})";
+            // }
         }
         else if (!_isConnecting)
         {

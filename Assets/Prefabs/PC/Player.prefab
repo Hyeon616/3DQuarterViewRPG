@@ -244,13 +244,12 @@ MonoBehaviour:
   interpolateRotation: 1
   interpolateScale: 1
   coordinateSpace: 0
-  sendIntervalMultiplier: 1
   timelineOffset: 0
   showGizmos: 0
   showOverlay: 0
   overlayColor: {r: 0, g: 0, b: 0, a: 0.5}
   bufferResetMultiplier: 3
-  changedDetection: 1
+  useFixedUpdate: 0
   positionSensitivity: 0.01
   rotationSensitivity: 0.01
   scaleSensitivity: 0.01
@@ -359,8 +358,8 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0
   inventorySize: 100
-  testItemIds: 
-  testItemQuantities: 
+  testItemIds: 0000000001000000020000000300000004000000
+  testItemQuantities: 0100000001000000050000000500000005000000
 --- !u!114 &-6979345343539332715
 MonoBehaviour:
   m_ObjectHideFlags: 0

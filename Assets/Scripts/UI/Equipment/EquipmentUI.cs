@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using Items;
 
 /// <summary>
 /// 장비 UI (현재 장착된 무기/방어구 표시)
@@ -118,7 +119,7 @@ public class EquipmentUI : MonoBehaviour
 
             if (weaponNameText != null)
             {
-                weaponNameText.text = weapon.ItemName;
+                weaponNameText.text = weapon.Name;
             }
 
             if (unequipWeaponButton != null)
@@ -164,7 +165,7 @@ public class EquipmentUI : MonoBehaviour
 
             if (armorNameText != null)
             {
-                armorNameText.text = armor.ItemName;
+                armorNameText.text = armor.Name;
             }
 
             if (unequipArmorButton != null)

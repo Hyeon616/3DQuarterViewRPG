@@ -4,7 +4,9 @@
       "mcp__ide__getDiagnostics",
       "Bash(done)",
       "Bash(find:*)",
-      "Bash(dir \"C:\\\\Users\\\\JHW\\\\Documents\\\\3DQuarterViewRPG\\\\Assets\\\\Data\\\\Equipment\")"
+      "Bash(dir \"C:\\\\Users\\\\JHW\\\\Documents\\\\3DQuarterViewRPG\\\\Assets\\\\Data\\\\Equipment\")",
+      "Bash(ls -la \"C:\\\\Users\\\\JHW\\\\Documents\\\\3DQuarterViewRPG\\\\Assets\\\\Scripts\\\\Combat\\\\Equipment\"\" 2>/dev/null || echo \"Folder is empty or doesn 't exist \")",
+      "Bash(dir \"C:\\\\Users\\\\JHW\\\\Documents\\\\3DQuarterViewRPG\\\\Assets\\\\Scripts\\\\Combat\\\\Equipment\")"
     ]
   }
 }

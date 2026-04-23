@@ -1,0 +1,111 @@
+{
+    "equipment": [
+        {
+            "id": 0,
+            "name": "철 건틀릿",
+            "description": "빠른 연타가 가능한 건틀릿입니다.",
+            "itemType": "Equipment",
+            "rarity": "Common",
+            "maxStackSize": 1,
+            "isTradeable": true,
+            "isDroppable": true,
+            "sellPrice": 80,
+            "equipmentType": "Weapon",
+            "weaponType": "Gauntlet",
+            "armorType": "",
+            "baseAttack": 8.0,
+            "baseAttackSpeed": 1.5,
+            "baseCriticalChance": 10.0,
+            "baseCriticalDamage": 1.5,
+            "attackPerLevel": 1.0,
+            "baseHp": 0.0,
+            "baseDefense": 0.0,
+            "hpPerLevel": 10.0,
+            "defensePerLevel": 1.0
+        },
+        {
+            "id": 1,
+            "name": "가죽 갑옷",
+            "description": "가죽으로 만든 가벼운 갑옷입니다.",
+            "itemType": "Equipment",
+            "rarity": "Common",
+            "maxStackSize": 1,
+            "isTradeable": true,
+            "isDroppable": true,
+            "sellPrice": 100,
+            "equipmentType": "Armor",
+            "weaponType": "",
+            "armorType": "Leather",
+            "baseAttack": 0.0,
+            "baseAttackSpeed": 1.0,
+            "baseCriticalChance": 0.0,
+            "baseCriticalDamage": 2.0,
+            "attackPerLevel": 2.0,
+            "baseHp": 50.0,
+            "baseDefense": 5.0,
+            "hpPerLevel": 8.0,
+            "defensePerLevel": 1.0
+        }
+    ],
+    "consumables": [
+        {
+            "id": 2,
+            "name": "소형 HP 포션",
+            "description": "최대 HP의 30%를 회복합니다.",
+            "itemType": "Consumable",
+            "rarity": "Common",
+            "maxStackSize": 99,
+            "isTradeable": true,
+            "isDroppable": true,
+            "sellPrice": 10,
+            "cooldown": 5.0,
+            "effects": [
+                {
+                    "type": "RestoreHPPercent",
+                    "value": 30.0,
+                    "duration": 0.0
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "name": "중형 HP 포션",
+            "description": "최대 HP의 45%를 회복합니다.",
+            "itemType": "Consumable",
+            "rarity": "Uncommon",
+            "maxStackSize": 99,
+            "isTradeable": true,
+            "isDroppable": true,
+            "sellPrice": 30,
+            "cooldown": 5.0,
+            "effects": [
+                {
+                    "type": "RestoreHPPercent",
+                    "value": 45.0,
+                    "duration": 0.0
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "name": "대형 HP 포션",
+            "description": "최대 HP의 60%를 회복합니다.",
+            "itemType": "Consumable",
+            "rarity": "Rare",
+            "maxStackSize": 99,
+            "isTradeable": true,
+            "isDroppable": true,
+            "sellPrice": 80,
+            "cooldown": 5.0,
+            "effects": [
+                {
+                    "type": "RestoreHPPercent",
+                    "value": 60.0,
+                    "duration": 0.0
+                }
+            ]
+        }
+    ],
+    "materials": [],
+    "quests": []
+}

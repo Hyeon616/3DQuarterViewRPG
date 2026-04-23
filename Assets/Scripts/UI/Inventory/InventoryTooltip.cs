@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using Items;
 
 /// <summary>
 /// 인벤토리 아이템 툴팁
@@ -45,7 +46,7 @@ public class InventoryTooltip : MonoBehaviour
     /// </summary>
     public void Show(int itemId, Vector3 worldPosition)
     {
-        var itemData = ItemDatabase.Instance?.GetItem(itemId);
+        var itemData = ItemManager.Instance?.GetItem(itemId);
         if (itemData == null)
         {
             Hide();
@@ -55,7 +56,7 @@ public class InventoryTooltip : MonoBehaviour
         // 텍스트 설정
         if (itemNameText != null)
         {
-            itemNameText.text = itemData.ItemName;
+            itemNameText.text = itemData.Name;
             itemNameText.color = GetRarityColor(itemData.Rarity);
         }
 
@@ -146,7 +147,6 @@ public class InventoryTooltip : MonoBehaviour
             ItemType.Consumable => "소비 아이템",
             ItemType.Material => "재료",
             ItemType.Quest => "퀘스트 아이템",
-            ItemType.Currency => "화폐",
             _ => ""
         };
     }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Items;
 
 /// <summary>
 /// 플레이어 저장 데이터 (JSON 직렬화용)
