@@ -6,7 +6,7 @@ using System.Collections.Generic;
 /// <summary>
 /// 인벤토리 UI 메인 패널 (StatTreeUI 패턴)
 /// </summary>
-public class InventoryUI : MonoBehaviour
+public class InventoryUI : MonoBehaviour, IToggleableUI
 {
     [Header("Panel")]
     [SerializeField] private GameObject panel;

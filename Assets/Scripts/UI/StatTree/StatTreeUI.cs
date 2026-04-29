@@ -4,7 +4,7 @@ using TMPro;
 using System;
 using System.Collections.Generic;
 
-public class StatTreeUI : MonoBehaviour
+public class StatTreeUI : MonoBehaviour, IToggleableUI
 {
     [Header("UI References")]
     [SerializeField] private GameObject panel;
@@ -29,6 +29,7 @@ public class StatTreeUI : MonoBehaviour
     private bool _isOpen;
     private Canvas _canvas;
 
+    public bool IsOpen => _isOpen;
     public event Action<bool> OnUIToggled;
 
     private void Awake()

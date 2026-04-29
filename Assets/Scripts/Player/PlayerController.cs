@@ -23,7 +23,7 @@ public class PlayerController : NetworkBehaviour
         typeof(PlayerStatAllocation),
         typeof(PlayerEquipment),
         typeof(PlayerDataController),
-        typeof(StatTreeUIConnector)
+        typeof(UIInputConnector)
     };
 
     // Action Map 이름 상수

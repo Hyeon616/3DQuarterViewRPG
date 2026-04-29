@@ -6,7 +6,7 @@ using Items;
 /// <summary>
 /// 장비 UI (현재 장착된 무기/방어구 표시)
 /// </summary>
-public class EquipmentUI : MonoBehaviour
+public class EquipmentUI : MonoBehaviour, IToggleableUI
 {
     [Header("Panel")]
     [SerializeField] private GameObject panel;

@@ -1,9 +1,10 @@
+using System;
 using Mirror;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class ClientNetworkUI : MonoBehaviour
+public class ClientNetworkUI : MonoBehaviour, IToggleableUI
 {
     [Header("연결 UI")]
     [SerializeField] private GameObject connectPanel;
@@ -17,6 +18,9 @@ public class ClientNetworkUI : MonoBehaviour
 
     private bool _isConnecting;
     private bool _isHost;
+
+    public bool IsOpen => statusPanel != null && statusPanel.activeSelf;
+    public event Action<bool> OnUIToggled;
 
     private void Awake()
     {
@@ -38,12 +42,38 @@ public class ClientNetworkUI : MonoBehaviour
         }
     }
 
+    public void Toggle()
+    {
+        if (IsOpen)
+            Close();
+        else
+            Open();
+    }
+
+    public void Open()
+    {
+        if (statusPanel != null)
+        {
+            statusPanel.SetActive(true);
+            OnUIToggled?.Invoke(true);
+        }
+    }
+
+    public void Close()
+    {
+        if (statusPanel != null)
+        {
+            statusPanel.SetActive(false);
+            OnUIToggled?.Invoke(false);
+        }
+    }
+
     private void OnClickConnect()
     {
         _isConnecting = true;
         _isHost = false;
         NetworkManager.singleton.StartClient();
-        ShowStatusPanel();
+        HideAllPanels();
         textStatus.text = "연결 중...";
     }
 
@@ -52,7 +82,7 @@ public class ClientNetworkUI : MonoBehaviour
         _isConnecting = true;
         _isHost = true;
         NetworkManager.singleton.StartHost();
-        ShowStatusPanel();
+        HideAllPanels();
         textStatus.text = "호스트 시작...";
     }
 
@@ -77,32 +107,27 @@ public class ClientNetworkUI : MonoBehaviour
         statusPanel.SetActive(false);
     }
 
-    private void ShowStatusPanel()
+    private void HideAllPanels()
     {
         connectPanel.SetActive(false);
-        statusPanel.SetActive(true);
+        statusPanel.SetActive(false);
     }
 
     void Update()
     {
-        if (!statusPanel.activeSelf)
+        // 연결 중이 아니고 연결도 안됐으면 connectPanel 표시
+        if (!NetworkClient.isConnected && !_isConnecting)
+        {
+            if (!connectPanel.activeSelf)
+            {
+                ShowConnectPanel();
+            }
             return;
+        }
 
         if (NetworkClient.isConnected)
         {
             _isConnecting = false;
-            // if (_isHost)
-            // {
-            //     textStatus.text = $"호스트 (Players: {NetworkServer.connections.Count})";
-            // }
-            // else
-            // {
-            //     textStatus.text = $"연결됨 (ID: {NetworkClient.connection.connectionId})";
-            // }
-        }
-        else if (!_isConnecting)
-        {
-            ShowConnectPanel();
         }
     }
 }
