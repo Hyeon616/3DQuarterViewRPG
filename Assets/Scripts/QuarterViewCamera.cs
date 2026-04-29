@@ -4,9 +4,9 @@ using Cinemachine;
 public class QuarterViewCamera : MonoBehaviour
 {
     [Header("Camera View")]
-    [SerializeField] private float height = 6.5f;
-    [SerializeField] private float distance = 4f;
-    [SerializeField] private float angle = 55f;
+    [SerializeField] private float height = 5.5f;
+    [SerializeField] private float distance = 5.3f;
+    [SerializeField] private float angle = 48f;
     [SerializeField] private float damping = 0f;
 
     private CinemachineVirtualCamera vcam;

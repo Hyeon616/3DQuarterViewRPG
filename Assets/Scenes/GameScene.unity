@@ -64008,9 +64008,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bb15eff8178ce843ae2cd5247a89a62, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  height: 6.5
-  distance: 4
-  angle: 55
+  height: 5.5
+  distance: 5.3
+  angle: 50
   damping: 0
 --- !u!114 &739444989
 MonoBehaviour:
