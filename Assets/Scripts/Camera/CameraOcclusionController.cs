@@ -15,6 +15,7 @@ public class CameraOcclusionController : MonoBehaviour
 
     private Transform _target;
     private Camera _mainCamera;
+    private PlayerOutlineController _playerOutline;
 
     private Dictionary<Renderer, MaterialData> _affectedRenderers = new();
     private HashSet<Renderer> _currentFrameObstacles = new();
@@ -31,6 +32,8 @@ public class CameraOcclusionController : MonoBehaviour
     {
         _target = newTarget;
         _mainCamera = Camera.main;
+        _playerOutline = newTarget.GetComponent<PlayerOutlineController>()
+                      ?? newTarget.GetComponentInChildren<PlayerOutlineController>();
         LoadCustomShader();
     }
 
@@ -47,24 +50,40 @@ public class CameraOcclusionController : MonoBehaviour
         _currentFrameObstacles.Clear();
         DetectObstacles();
         UpdateObstacleTransparency();
+        _playerOutline?.SetOccluded(IsPlayerOccluded());
+    }
+
+    // 플레이어 자신의 레이어를 제외한 모든 솔리드 레이어에 대해 감지
+    private bool IsPlayerOccluded()
+    {
+        int occlusionMask = Physics.DefaultRaycastLayers & ~(1 << _target.gameObject.layer);
+        Vector3 cameraPos = _mainCamera.transform.position;
+        foreach (Vector3 targetPos in GetTargetPoints(_target.position))
+        {
+            Vector3 dir = targetPos - cameraPos;
+            if (Physics.Raycast(cameraPos, dir.normalized, dir.magnitude, occlusionMask))
+                return true;
+        }
+        return false;
+    }
+
+    private Vector3[] GetTargetPoints(Vector3 basePos)
+    {
+        return new Vector3[]
+        {
+            basePos + Vector3.up * characterHeight,                                               // 머리
+            basePos + Vector3.up * (characterHeight * 0.5f),                                      // 몸통 중앙
+            basePos + Vector3.up * 0.1f,                                                          // 발
+            basePos + Vector3.up * (characterHeight * 0.5f) + _target.right * characterRadius,    // 몸통 오른쪽
+            basePos + Vector3.up * (characterHeight * 0.5f) - _target.right * characterRadius,    // 몸통 왼쪽
+        };
     }
 
     private void DetectObstacles()
     {
         Vector3 cameraPos = _mainCamera.transform.position;
-        Vector3 basePos = _target.position;
 
-        // 캐릭터의 여러 포인트로 레이캐스트
-        Vector3[] targetPoints = new Vector3[]
-        {
-            basePos + Vector3.up * characterHeight,                    // 머리
-            basePos + Vector3.up * (characterHeight * 0.5f),           // 몸통 중앙
-            basePos + Vector3.up * 0.1f,                               // 발
-            basePos + Vector3.up * (characterHeight * 0.5f) + _target.right * characterRadius,  // 몸통 오른쪽
-            basePos + Vector3.up * (characterHeight * 0.5f) - _target.right * characterRadius,  // 몸통 왼쪽
-        };
-
-        foreach (Vector3 targetPos in targetPoints)
+        foreach (Vector3 targetPos in GetTargetPoints(_target.position))
         {
             Vector3 direction = targetPos - cameraPos;
             float distance = direction.magnitude;
@@ -274,13 +293,16 @@ public class CameraOcclusionController : MonoBehaviour
             mat.SetInt(SrcBlendId, (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
         if (mat.HasProperty(DstBlendId))
             mat.SetInt(DstBlendId, (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+
+        // ZWrite ON + AlphaTest queue 유지: depth buffer에 기록되어야 mask shader가 플레이어 가려짐을 감지할 수 있음
+        // ZWrite OFF + renderQueue=3000 으로 변경하면 _CameraDepthTexture에서 이 오브젝트가 사라져 outline이 동작하지 않음
         if (mat.HasProperty(ZWriteId))
-            mat.SetInt(ZWriteId, 0);
+            mat.SetInt(ZWriteId, 1);
 
         mat.DisableKeyword("_ALPHATEST_ON");
         mat.EnableKeyword("_ALPHABLEND_ON");
         mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-        mat.renderQueue = 3000;
+        mat.renderQueue = 2450;
     }
 
     private void OnDestroy()
